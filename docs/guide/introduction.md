@@ -56,6 +56,13 @@ Receive new chunk → Append to buffer → Detect completed blocks → Only pars
 - ✅ Real-time Markdown preview
 - ✅ Low-latency rendering scenarios
 
+## Online Demo
+
+Try Incremark right now:
+
+- 🎮 [Vue Demo](https://incremark-vue.vercel.app/) - Vue 3 integration example
+- ⚛️ [React Demo](https://incremark-react.vercel.app/) - React integration example
+
 ## Next Steps
 
 - [Quick Start](./getting-started) - Get started in 5 minutes

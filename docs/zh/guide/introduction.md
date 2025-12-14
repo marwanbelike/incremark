@@ -56,6 +56,13 @@ Incremark 采用**增量解析**策略：
 - ✅ 实时 Markdown 预览
 - ✅ 需要低延迟渲染的场景
 
+## 在线演示
+
+立即体验 Incremark：
+
+- 🎮 [Vue 演示](https://incremark-vue.vercel.app/) - Vue 3 集成示例
+- ⚛️ [React 演示](https://incremark-react.vercel.app/) - React 集成示例
+
 ## 下一步
 
 - [快速开始](./getting-started) - 5 分钟上手

@@ -55,5 +55,11 @@
     "streaming",
     "ai"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kingshuaishuai/incremark.git",
+    "directory": "packages/vue"
+  },
+  "homepage": "https://incremark-docs.vercel.app/"
 }

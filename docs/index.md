@@ -13,8 +13,14 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
+      text: Vue Demo
+      link: https://incremark-vue.vercel.app/
+    - theme: alt
+      text: React Demo
+      link: https://incremark-react.vercel.app/
+    - theme: alt
       text: GitHub
-      link: https://github.com/example/incremark
+      link: https://github.com/kingshuaishuai/incremark
 
 features:
   - icon: ⚡

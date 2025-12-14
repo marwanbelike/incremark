@@ -2,6 +2,11 @@
 
 增量式 Markdown 解析器，专为 AI 流式输出设计。
 
+[![npm version](https://img.shields.io/npm/v/@incremark/core)](https://www.npmjs.com/package/@incremark/core)
+[![license](https://img.shields.io/npm/l/@incremark/core)](./LICENSE)
+
+📖 [文档](https://incremark-docs.vercel.app/) | 🎮 [Vue Demo](https://incremark-vue.vercel.app/) | ⚛️ [React Demo](https://incremark-react.vercel.app/)
+
 ## 为什么选择 Incremark？
 
 传统 Markdown 解析器在 AI 流式输出场景中存在性能问题：每次收到新内容都要重新解析全部文本。Incremark 采用增量解析策略，**只解析新增内容**，已完成的块不再重复处理。
@@ -112,12 +117,12 @@ pnpm build
 
 ## 文档
 
-完整文档请访问：[https://incremark.dev](https://incremark.dev)
+完整文档请访问：[https://incremark-docs.vercel.app/](https://incremark-docs.vercel.app/)
 
-- [介绍](./docs/guide/introduction.md)
-- [快速开始](./docs/guide/getting-started.md)
-- [核心概念](./docs/guide/concepts.md)
-- [API 参考](./docs/api/core.md)
+## 在线演示
+
+- 🎮 [Vue Demo](https://incremark-vue.vercel.app/) - Vue 3 集成示例
+- ⚛️ [React Demo](https://incremark-react.vercel.app/) - React 集成示例
 
 ## License
 
