@@ -26,7 +26,7 @@ Receive new chunk → Append to buffer → Detect completed blocks → Only pars
 
 ### Core Advantages
 
-1. **Completed blocks are never re-parsed** - Save 90%+ parsing overhead
+1. **Completed blocks are never re-parsed** - Up to 46x faster for long documents
 2. **Smart boundary detection** - Accurately identify when blocks are complete
 3. **Maintain parsing correctness** - Handle code blocks, lists and other complex nested structures
 

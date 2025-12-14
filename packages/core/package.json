@@ -28,7 +28,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "benchmark": "npx tsx src/benchmark/run.ts"
   },
   "dependencies": {
     "@types/mdast": "^4.0.0",

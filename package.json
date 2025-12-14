@@ -17,6 +17,7 @@
     "docs:dev": "pnpm --filter @incremark/docs dev",
     "docs:build": "pnpm --filter @incremark/docs build",
     "docs:preview": "pnpm --filter @incremark/docs preview",
+    "benchmark": "pnpm --filter @incremark/core benchmark",
     "bump": "bumpp package.json packages/*/package.json --commit --push --tag",
     "bump:dry": "bumpp package.json packages/*/package.json --dry",
     "release": "pnpm --filter './packages/*' build && pnpm --filter './packages/*' publish --access public --registry https://registry.npmjs.org",

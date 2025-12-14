@@ -16,7 +16,7 @@ export default defineConfig({
         nav: [
           { text: 'Guide', link: '/guide/introduction' },
           { text: 'API', link: '/api/core' },
-          { text: 'GitHub', link: 'https://github.com/example/incremark' }
+          { text: 'GitHub', link: 'https://github.com/kingshuaishuai/incremark' }
         ],
         sidebar: {
           '/guide/': [
@@ -25,7 +25,8 @@ export default defineConfig({
               items: [
                 { text: 'Introduction', link: '/guide/introduction' },
                 { text: 'Quick Start', link: '/guide/getting-started' },
-                { text: 'Core Concepts', link: '/guide/concepts' }
+                { text: 'Core Concepts', link: '/guide/concepts' },
+                { text: '🚀 Benchmark', link: '/guide/benchmark' }
               ]
             },
             {
@@ -66,7 +67,7 @@ export default defineConfig({
         nav: [
           { text: '指南', link: '/zh/guide/introduction' },
           { text: 'API', link: '/zh/api/core' },
-          { text: 'GitHub', link: 'https://github.com/example/incremark' }
+          { text: 'GitHub', link: 'https://github.com/kingshuaishuai/incremark' }
         ],
         sidebar: {
           '/zh/guide/': [
@@ -75,7 +76,8 @@ export default defineConfig({
               items: [
                 { text: '介绍', link: '/zh/guide/introduction' },
                 { text: '快速开始', link: '/zh/guide/getting-started' },
-                { text: '核心概念', link: '/zh/guide/concepts' }
+                { text: '核心概念', link: '/zh/guide/concepts' },
+                { text: '🚀 性能测试', link: '/zh/guide/benchmark' }
               ]
             },
             {
@@ -120,7 +122,7 @@ export default defineConfig({
     logo: '/logo.svg',
     
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/example/incremark' }
+      { icon: 'github', link: 'https://github.com/kingshuaishuai/incremark' }
     ],
 
     footer: {

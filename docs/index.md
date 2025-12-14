@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Incremark
   text: Incremental Markdown Parser
-  tagline: Designed for AI streaming output, save 90% parsing overhead
+  tagline: Designed for AI streaming output, up to 46x faster parsing
   image:
     src: /logo.svg
     alt: Incremark
@@ -47,11 +47,12 @@ features:
 
 Traditional Markdown parsers have serious performance issues in AI streaming scenarios:
 
-| Scenario | Traditional | Incremark |
-|----------|-------------|-----------|
-| 1000 chars input | Parse ~500K chars | Parse ~50K chars |
-| CPU usage | High, page stutters | Low, smooth |
-| Memory | Repeatedly create AST | Incremental update, reuse nodes |
+| Document Size | Traditional | Incremark | Speedup |
+|--------------|-------------|-----------|---------|
+| ~1KB | 0.4s | 0.17s | **2x** |
+| ~5KB | 10s | 0.9s | **10x** |
+| ~10KB | 40s | 1.8s | **20x** |
+| ~20KB | 183s | 4s | **46x** |
 
 ## Quick Start
 
