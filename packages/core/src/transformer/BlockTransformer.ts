@@ -54,7 +54,6 @@ export class BlockTransformer<T = unknown> {
   private lastTickTime = 0
   private isRunning = false
   private isPaused = false
-  private charsAddedThisTick = 0
   private visibilityHandler: (() => void) | null = null
 
   constructor(options: TransformerOptions = {}) {
@@ -148,7 +147,6 @@ export class BlockTransformer<T = unknown> {
       pendingBlocks: []
     }
 
-    this.charsAddedThisTick = 0
     this.emit()
   }
 
@@ -163,7 +161,6 @@ export class BlockTransformer<T = unknown> {
       currentProgress: 0,
       pendingBlocks: []
     }
-    this.charsAddedThisTick = 0
     this.emit()
   }
 
@@ -197,8 +194,7 @@ export class BlockTransformer<T = unknown> {
         ...block,
         displayNode: block.node,
         progress: 1,
-        isDisplayComplete: true,
-        charsAddedThisTick: 0
+        isDisplayComplete: true
       })
     }
 
@@ -211,8 +207,7 @@ export class BlockTransformer<T = unknown> {
         ...this.state.currentBlock,
         displayNode: displayNode || { type: 'paragraph', children: [] },
         progress: total > 0 ? this.state.currentProgress / total : 1,
-        isDisplayComplete: false,
-        charsAddedThisTick: this.charsAddedThisTick
+        isDisplayComplete: false
       })
     }
 
@@ -374,9 +369,7 @@ export class BlockTransformer<T = unknown> {
     const total = this.countChars(block.node)
     const step = this.getStep()
     
-    const prevProgress = this.state.currentProgress
-    this.state.currentProgress = Math.min(prevProgress + step, total)
-    this.charsAddedThisTick = this.state.currentProgress - prevProgress
+    this.state.currentProgress = Math.min(this.state.currentProgress + step, total)
 
     this.emit()
 
@@ -386,7 +379,6 @@ export class BlockTransformer<T = unknown> {
       this.state.completedBlocks.push(block)
       this.state.currentBlock = null
       this.state.currentProgress = 0
-      this.charsAddedThisTick = 0
       this.processNext()
     }
   }
@@ -405,7 +397,6 @@ export class BlockTransformer<T = unknown> {
     if (this.state.pendingBlocks.length > 0) {
       this.state.currentBlock = this.state.pendingBlocks.shift()!
       this.state.currentProgress = 0
-      this.charsAddedThisTick = 0
       this.emit()
       // 继续运行（rAF 已经在调度中）
     } else {
