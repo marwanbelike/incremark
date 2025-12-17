@@ -8,6 +8,7 @@
 
 - 🚀 **增量解析** - 只解析新增内容，已完成的块不再重复处理
 - 🔄 **流式友好** - 专为 AI 流式输出场景设计
+- ⌨️ **打字机效果** - 内置 BlockTransformer 实现逐字符显示
 - 🎯 **智能边界检测** - 准确识别 Markdown 块边界
 - 📦 **框架无关** - 可与任何前端框架配合使用
 
@@ -86,6 +87,70 @@ console.log(update.completed) // 已完成的块
 
 获取完整 AST。
 
+## BlockTransformer
+
+打字机效果控制器，作为解析器和渲染器之间的中间层。
+
+### 基本用法
+
+```ts
+import { createBlockTransformer, defaultPlugins } from '@incremark/core'
+
+const transformer = createBlockTransformer({
+  charsPerTick: 2,      // 每次显示 2 个字符
+  tickInterval: 50,     // 每 50ms 显示一次
+  plugins: defaultPlugins,
+  onChange: (displayBlocks) => {
+    // 更新 UI
+    render(displayBlocks)
+  }
+})
+
+// 推送源 blocks
+transformer.push(sourceBlocks)
+
+// 跳过动画
+transformer.skip()
+
+// 重置
+transformer.reset()
+
+// 销毁
+transformer.destroy()
+```
+
+### 配置选项
+
+```ts
+interface TransformerOptions {
+  charsPerTick?: number       // 每次显示的字符数（默认：2）
+  tickInterval?: number       // 显示间隔 ms（默认：50）
+  plugins?: TransformerPlugin[] // 插件列表
+  onChange?: (blocks: DisplayBlock[]) => void
+}
+```
+
+### 插件系统
+
+```ts
+import {
+  defaultPlugins,  // 默认插件（图片、分隔线立即显示）
+  allPlugins,      // 完整插件（代码块等整体显示）
+  codeBlockPlugin,
+  mermaidPlugin,
+  imagePlugin,
+  mathPlugin,
+  thematicBreakPlugin,
+  createPlugin
+} from '@incremark/core'
+
+// 自定义插件
+const myPlugin = createPlugin('my-plugin', 
+  (node) => node.type === 'myType',
+  { countChars: () => 1 }
+)
+```
+
 ## 类型定义
 
 ```ts
@@ -97,6 +162,23 @@ interface ParsedBlock {
   endOffset: number
   rawText: string
 }
+
+interface SourceBlock {
+  id: string
+  node: RootContent
+  status: 'pending' | 'stable' | 'completed'
+  meta?: unknown
+}
+
+interface DisplayBlock {
+  id: string
+  sourceNode: RootContent
+  displayNode: RootContent
+  displayedChars: number
+  totalChars: number
+  isDisplayComplete: boolean
+  meta?: unknown
+}
 ```
 
 ## 与框架集成
@@ -107,4 +189,3 @@ interface ParsedBlock {
 ## License
 
 MIT
-

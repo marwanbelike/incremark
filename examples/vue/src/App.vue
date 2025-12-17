@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, h, defineComponent, computed } from 'vue'
-import { useIncremark, useDevTools } from '../../../packages/vue/src/composables'
-import { Incremark } from '../../../packages/vue/src/components'
-import { createIncremarkParser } from '../../../packages/core/src'
+import { ref, h, defineComponent, computed, watch } from 'vue'
+import { useIncremark, useDevTools, useBlockTransformer } from '../../../packages/vue/src/composables'
+import { Incremark, AutoScrollContainer } from '../../../packages/vue/src/components'
+import { createIncremarkParser, defaultPlugins } from '../../../packages/core/src'
 // @ts-ignore - 类型声明
 import { math } from 'micromark-extension-math'
 // @ts-ignore - 类型声明
@@ -16,10 +16,137 @@ const incremark = useIncremark({
   extensions: [math()],
   mdastExtensions: [mathFromMarkdown()]
 })
-const { markdown, blocks, completedBlocks, pendingBlocks, append, finalize, reset, render, isLoading } = incremark
+const { markdown, blocks, completedBlocks, pendingBlocks, append, finalize, reset: resetParser, render, isLoading } = incremark
 
 // 使用独立的 DevTools
 useDevTools(incremark)
+
+// ============ 打字机效果（BlockTransformer） ============
+const typewriterMode = ref(false)
+const typewriterSpeed = ref(2) // 每 tick 字符数
+const typewriterInterval = ref(30) // tick 间隔（毫秒）
+const typewriterRandomStep = ref(true) // 是否使用随机步长
+const typewriterEffect = ref<'none' | 'typing'>('typing') // 动画效果
+const typewriterCursor = ref('|') // 光标字符
+
+// 只使用 completedBlocks 作为 transformer 的输入
+// 因为 completedBlocks 的 id 是稳定的，而 pendingBlocks 每次 append 都会重新生成 id
+const sourceBlocks = computed(() => {
+  return completedBlocks.value.map(block => ({
+    id: block.id,
+    node: block.node,
+    status: block.status as 'pending' | 'stable' | 'completed'
+  }))
+})
+
+// 计算 charsPerTick：如果启用随机步长，使用 [1, speed]，否则使用固定值
+const computedCharsPerTick = computed(() => {
+  if (typewriterRandomStep.value) {
+    return [1, Math.max(2, typewriterSpeed.value)] as [number, number]
+  }
+  return typewriterSpeed.value
+})
+
+// 使用 BlockTransformer 包装 completedBlocks
+const { 
+  displayBlocks, 
+  isProcessing, 
+  isPaused: isTypewriterPaused,
+  effect: currentEffect,
+  skip: skipTypewriter,
+  pause: pauseTypewriter,
+  resume: resumeTypewriter,
+  reset: resetTransformer,
+  setOptions: setTransformerOptions,
+  transformer
+} = useBlockTransformer(sourceBlocks, {
+  charsPerTick: computedCharsPerTick.value,
+  tickInterval: typewriterInterval.value,
+  effect: typewriterEffect.value,
+  pauseOnHidden: true, // 页面不可见时自动暂停
+  plugins: defaultPlugins
+})
+
+// 监听速度/间隔/效果变化，动态更新 transformer 配置
+watch([computedCharsPerTick, typewriterInterval, typewriterEffect], ([speed, interval, effect]) => {
+  setTransformerOptions({ 
+    charsPerTick: speed, 
+    tickInterval: interval,
+    effect: effect
+  })
+})
+
+// 在 AST 节点末尾添加光标字符
+function addCursorToNode(node: any, cursor: string = '|'): any {
+  const cloned = JSON.parse(JSON.stringify(node))
+  
+  function addToLast(n: any): boolean {
+    // 如果有 children，递归到最后一个子节点
+    if (n.children && n.children.length > 0) {
+      // 从最后一个子节点开始尝试
+      for (let i = n.children.length - 1; i >= 0; i--) {
+        if (addToLast(n.children[i])) {
+          return true
+        }
+      }
+      // 如果所有子节点都失败了，在末尾添加一个文本节点
+      n.children.push({ type: 'text', value: cursor })
+      return true
+    }
+    // 如果是文本节点，直接添加
+    if (n.type === 'text' && typeof n.value === 'string') {
+      n.value += cursor
+      return true
+    }
+    // 如果有 value 属性（如 inlineCode），添加到 value
+    if (typeof n.value === 'string') {
+      n.value += cursor
+      return true
+    }
+    return false
+  }
+  
+  addToLast(cloned)
+  return cloned
+}
+
+// 根据模式选择要渲染的 blocks
+const renderBlocks = computed(() => {
+  if (!typewriterMode.value) {
+    return blocks.value
+  }
+  
+  // 打字机模式：只使用 transformer 输出的 displayBlocks
+  // 不显示 pending blocks，避免内容闪烁
+  return displayBlocks.value.map((db, index) => {
+    const isPending = !db.isDisplayComplete
+    const isLastPending = isPending && index === displayBlocks.value.length - 1
+    
+    let node = db.displayNode
+    
+    // 光标效果：在最后一个 pending 块末尾添加光标字符
+    if (typewriterEffect.value === 'typing' && isLastPending) {
+      node = addCursorToNode(db.displayNode, typewriterCursor.value)
+    }
+    
+    return {
+      id: db.id,
+      stableId: db.id,
+      status: (db.isDisplayComplete ? 'completed' : 'pending') as 'pending' | 'stable' | 'completed',
+      isLastPending, // 标记是否是最后一个 pending 块
+      node,
+      startOffset: 0,
+      endOffset: 0,
+      rawText: ''
+    }
+  })
+})
+
+// 统一的重置函数
+function reset() {
+  resetParser()
+  resetTransformer()
+}
 
 const isStreaming = ref(false)
 
@@ -51,6 +178,20 @@ const i18n = {
     customInput: '自定义输入',
     inputPlaceholder: '在这里输入你的 Markdown 内容...',
     useExample: '使用示例',
+    typewriterMode: '⌨️ 打字机',
+    typewriterSpeed: '速度',
+    skip: '跳过',
+    pause: '暂停',
+    resume: '继续',
+    typing: '输入中...',
+    paused: '已暂停',
+    charsPerTick: '字符/tick',
+    intervalMs: 'ms/tick',
+    randomStep: '随机步长',
+    effectNone: '无动画',
+    effectTyping: '光标',
+    autoScroll: '📜 自动滚动',
+    scrollPaused: '已暂停',
     sampleMarkdown: `# 🚀 Incremark Vue 示例
 
 欢迎使用 **Incremark**！这是一个专为 AI 流式输出设计的增量 Markdown 解析器。
@@ -162,6 +303,20 @@ const { append, finalize } = useIncremark({
     customInput: 'Custom Input',
     inputPlaceholder: 'Enter your Markdown content here...',
     useExample: 'Use Example',
+    typewriterMode: '⌨️ Typewriter',
+    typewriterSpeed: 'Speed',
+    skip: 'Skip',
+    pause: 'Pause',
+    resume: 'Resume',
+    typing: 'Typing...',
+    paused: 'Paused',
+    charsPerTick: 'chars/tick',
+    intervalMs: 'ms/tick',
+    randomStep: 'Random Step',
+    effectNone: 'None',
+    effectTyping: 'Cursor',
+    autoScroll: '📜 Auto Scroll',
+    scrollPaused: 'Paused',
     sampleMarkdown: `# 🚀 Incremark Vue Example
 
 Welcome to **Incremark**! An incremental Markdown parser designed for AI streaming output.
@@ -258,6 +413,10 @@ function toggleLocale() {
   localStorage.setItem('locale', locale.value)
   reset()
 }
+
+// 自动滚动
+const autoScrollEnabled = ref(true)
+const scrollContainerRef = ref<InstanceType<typeof AutoScrollContainer> | null>(null)
 
 // 自定义输入模式
 const customInputMode = ref(false)
@@ -406,10 +565,75 @@ function renderOnce() {
           <input type="checkbox" v-model="customInputMode" />
           {{ t.customInput }}
         </label>
+        <label class="checkbox typewriter-toggle">
+          <input type="checkbox" v-model="typewriterMode" />
+          {{ t.typewriterMode }}
+        </label>
+        <label class="checkbox auto-scroll-toggle">
+          <input type="checkbox" v-model="autoScrollEnabled" />
+          {{ t.autoScroll }}
+          <span v-if="scrollContainerRef?.isUserScrolledUp?.()" class="scroll-paused-hint">
+            ({{ t.scrollPaused }})
+          </span>
+        </label>
+        <template v-if="typewriterMode">
+          <label class="speed-control">
+            <input 
+              type="range" 
+              v-model.number="typewriterSpeed" 
+              min="1" 
+              max="10" 
+              step="1"
+            />
+            <span class="speed-value">{{ typewriterSpeed }} {{ t.charsPerTick }}</span>
+          </label>
+          <label class="speed-control">
+            <input 
+              type="range" 
+              v-model.number="typewriterInterval" 
+              min="10" 
+              max="200" 
+              step="10"
+            />
+            <span class="speed-value">{{ typewriterInterval }} {{ t.intervalMs }}</span>
+          </label>
+          <label class="checkbox random-step-toggle">
+            <input type="checkbox" v-model="typewriterRandomStep" />
+            {{ t.randomStep }}
+          </label>
+          <select v-model="typewriterEffect" class="effect-select">
+            <option value="none">{{ t.effectNone }}</option>
+            <option value="typing">{{ t.effectTyping }}</option>
+          </select>
+          <button 
+            v-if="isProcessing && !isTypewriterPaused" 
+            class="pause-btn"
+            @click="pauseTypewriter"
+          >
+            ⏸️ {{ t.pause }}
+          </button>
+          <button 
+            v-if="isTypewriterPaused" 
+            class="resume-btn"
+            @click="resumeTypewriter"
+          >
+            ▶️ {{ t.resume }}
+          </button>
+          <button 
+            v-if="isProcessing" 
+            class="skip-btn"
+            @click="skipTypewriter"
+          >
+            ⏭️ {{ t.skip }}
+          </button>
+        </template>
         <span class="stats">
           📝 {{ markdown.length }} {{ t.chars }} |
           ✅ {{ completedBlocks.length }} {{ t.blocks }} |
           ⏳ {{ pendingBlocks.length }} {{ t.pending }}
+          <template v-if="typewriterMode && isProcessing">
+            | ⌨️ {{ isTypewriterPaused ? t.paused : t.typing }}
+          </template>
         </span>
       </div>
     </header>
@@ -483,13 +707,19 @@ function renderOnce() {
       ></textarea>
     </div>
 
-    <main class="content">
-      <!-- 直接传入 blocks，不需要 ref -->
-      <Incremark
-        :blocks="blocks"
-        :components="useCustomComponents ? customComponents : {}"
-        :show-block-status="true"
-      />
+    <main :class="['content', typewriterMode && `effect-${typewriterEffect}`]">
+      <AutoScrollContainer 
+        ref="scrollContainerRef" 
+        :enabled="autoScrollEnabled"
+        class="scroll-container"
+      >
+        <!-- 根据模式选择 blocks 或 displayBlocks -->
+        <Incremark
+          :blocks="renderBlocks"
+          :components="useCustomComponents ? customComponents : {}"
+          :show-block-status="true"
+        />
+      </AutoScrollContainer>
     </main>
     <!-- DevTools 通过 useDevTools 自动挂载 -->
   </div>
@@ -581,6 +811,75 @@ button:disabled {
   cursor: pointer;
 }
 
+/* 打字机效果控件 */
+.typewriter-toggle input {
+  accent-color: #8b5cf6;
+}
+
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.speed-control input[type="range"] {
+  width: 80px;
+  accent-color: #8b5cf6;
+}
+
+.speed-value {
+  font-size: 0.75rem;
+  color: #666;
+  min-width: 70px;
+}
+
+.skip-btn,
+.pause-btn,
+.resume-btn {
+  background: #8b5cf6;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.skip-btn:hover:not(:disabled),
+.pause-btn:hover:not(:disabled),
+.resume-btn:hover:not(:disabled) {
+  background: #7c3aed;
+}
+
+.pause-btn {
+  background: #f59e0b;
+}
+
+.pause-btn:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.resume-btn {
+  background: #10b981;
+}
+
+.resume-btn:hover:not(:disabled) {
+  background: #059669;
+}
+
+.effect-select {
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #ddd;
+  background: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.effect-select:hover {
+  border-color: #8b5cf6;
+}
+
+.random-step-toggle {
+  font-size: 0.85rem;
+}
+
 .stats {
   margin-left: auto;
   font-size: 0.875rem;
@@ -590,11 +889,25 @@ button:disabled {
 .content {
   background: #fff;
   border-radius: 8px;
-  padding: 2rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   min-height: 500px;
   max-height: 70vh;
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.scroll-container {
+  height: 100%;
+  max-height: 70vh;
+  padding: 2rem;
+}
+
+.auto-scroll-toggle input {
+  accent-color: #3b82f6;
+}
+
+.scroll-paused-hint {
+  color: #f59e0b;
+  font-size: 0.75rem;
 }
 
 /* 自定义标题样式 */
@@ -897,5 +1210,12 @@ button:disabled {
   .benchmark-results {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============ 打字机动画效果 ============ */
+
+/* 打字机光标效果 - 光标字符已直接添加到内容中 */
+.content.effect-typing .incremark-block.incremark-pending {
+  /* 光标字符已内嵌在内容中 */
 }
 </style>

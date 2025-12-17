@@ -16,3 +16,6 @@ export { default as IncremarkThematicBreak } from './IncremarkThematicBreak.vue'
 export { default as IncremarkInline } from './IncremarkInline.vue'
 export { default as IncremarkMath } from './IncremarkMath.vue'
 export { default as IncremarkDefault } from './IncremarkDefault.vue'
+
+// 工具组件
+export { default as AutoScrollContainer } from './AutoScrollContainer.vue'

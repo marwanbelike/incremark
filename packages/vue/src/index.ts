@@ -1,6 +1,12 @@
 // Composables
-export { useIncremark, useStreamRenderer, useDevTools } from './composables'
-export type { UseIncremarkOptions, UseStreamRendererOptions, UseDevToolsOptions } from './composables'
+export { useIncremark, useStreamRenderer, useDevTools, useBlockTransformer } from './composables'
+export type {
+  UseIncremarkOptions,
+  UseStreamRendererOptions,
+  UseDevToolsOptions,
+  UseBlockTransformerOptions,
+  UseBlockTransformerReturn
+} from './composables'
 
 // Components
 export {
@@ -15,7 +21,8 @@ export {
   IncremarkThematicBreak,
   IncremarkInline,
   IncremarkMath,
-  IncremarkDefault
+  IncremarkDefault,
+  AutoScrollContainer
 } from './components'
 export type { ComponentMap, BlockWithStableId } from './components'
 
@@ -26,5 +33,29 @@ export type {
   ParserOptions,
   BlockStatus,
   Root,
-  RootContent
+  RootContent,
+  // Transformer types
+  SourceBlock,
+  DisplayBlock,
+  TransformerPlugin,
+  TransformerOptions,
+  TransformerState,
+  AnimationEffect
+} from '@incremark/core'
+
+// Re-export transformer utilities and plugins
+export {
+  BlockTransformer,
+  createBlockTransformer,
+  countChars,
+  sliceAst,
+  cloneNode,
+  codeBlockPlugin,
+  mermaidPlugin,
+  imagePlugin,
+  mathPlugin,
+  thematicBreakPlugin,
+  defaultPlugins,
+  allPlugins,
+  createPlugin
 } from '@incremark/core'

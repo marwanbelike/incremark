@@ -49,3 +49,44 @@ export {
 // 工具函数
 export { generateId, resetIdCounter, calculateLineOffset, splitLines, joinLines } from './utils'
 
+// Block Transformer（打字机效果中间层）
+export {
+  // 核心类
+  BlockTransformer,
+  createBlockTransformer,
+  // 工具函数
+  countChars,
+  sliceAst,
+  cloneNode,
+  // 内置插件
+  codeBlockPlugin,
+  mermaidPlugin,
+  imagePlugin,
+  mathPlugin,
+  thematicBreakPlugin,
+  defaultPlugins,
+  allPlugins,
+  createPlugin
+} from './transformer'
+
+// Transformer 类型
+export type {
+  SourceBlock,
+  DisplayBlock,
+  TransformerPlugin,
+  TransformerOptions,
+  TransformerState,
+  AnimationEffect
+} from './transformer'
+
+/**
+ * BlockTransformer 动画样式
+ * 
+ * 使用方法：
+ * ```js
+ * import '@incremark/core/transformer/styles.css'
+ * ```
+ * 
+ * 或者复制 packages/core/src/transformer/styles.css 到你的项目中自定义
+ */
+

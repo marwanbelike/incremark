@@ -7,10 +7,20 @@
 // Hooks
 export { useIncremark, type UseIncremarkOptions, type UseIncremarkReturn } from './hooks'
 export { useDevTools, type UseDevToolsOptions } from './hooks'
+export {
+  useBlockTransformer,
+  type UseBlockTransformerOptions,
+  type UseBlockTransformerReturn
+} from './hooks'
 
 // Components
 export { Incremark, type IncremarkProps } from './components'
 export { IncremarkRenderer, type IncremarkRendererProps } from './components'
+export {
+  AutoScrollContainer,
+  type AutoScrollContainerProps,
+  type AutoScrollContainerRef
+} from './components'
 
 // Re-export core types
 export type {
@@ -18,6 +28,30 @@ export type {
   IncrementalUpdate,
   ParserOptions,
   Root,
-  RootContent
+  RootContent,
+  // Transformer types
+  SourceBlock,
+  DisplayBlock,
+  TransformerOptions,
+  TransformerPlugin,
+  TransformerState,
+  AnimationEffect
+} from '@incremark/core'
+
+// Re-export transformer utilities and plugins
+export {
+  BlockTransformer,
+  createBlockTransformer,
+  countChars,
+  sliceAst,
+  cloneNode,
+  codeBlockPlugin,
+  mermaidPlugin,
+  imagePlugin,
+  mathPlugin,
+  thematicBreakPlugin,
+  defaultPlugins,
+  allPlugins,
+  createPlugin
 } from '@incremark/core'
 

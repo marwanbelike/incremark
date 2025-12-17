@@ -6,3 +6,6 @@ export type { UseStreamRendererOptions } from './useStreamRenderer'
 
 export { useDevTools } from './useDevTools'
 export type { UseDevToolsOptions } from './useDevTools'
+
+export { useBlockTransformer } from './useBlockTransformer'
+export type { UseBlockTransformerOptions, UseBlockTransformerReturn } from './useBlockTransformer'

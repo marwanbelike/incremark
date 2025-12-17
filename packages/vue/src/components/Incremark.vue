@@ -17,6 +17,7 @@ export type ComponentMap = Partial<Record<string, Component>>
 // 带稳定 ID 的块类型
 export interface BlockWithStableId extends ParsedBlock {
   stableId: string
+  isLastPending?: boolean // 是否是最后一个 pending 块
 }
 
 const props = withDefaults(
@@ -73,7 +74,8 @@ function getComponent(type: string): Component {
         :class="[
           'incremark-block',
           block.status === 'completed' ? completedClass : pendingClass,
-          { 'incremark-show-status': showBlockStatus }
+          { 'incremark-show-status': showBlockStatus },
+          { 'incremark-last-pending': block.isLastPending }
         ]"
       >
         <component :is="getComponent(block.node.type)" :node="block.node" />

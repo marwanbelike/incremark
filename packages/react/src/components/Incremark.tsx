@@ -4,6 +4,7 @@ import { IncremarkRenderer } from './IncremarkRenderer'
 
 interface BlockWithStableId extends ParsedBlock {
   stableId: string
+  isLastPending?: boolean // 是否是最后一个 pending 块
 }
 
 export interface IncremarkProps {
@@ -38,14 +39,20 @@ export const Incremark: React.FC<IncremarkProps> = ({
 }) => {
   return (
     <div className={`incremark ${className}`}>
-      {blocks.map((block) => (
-        <div
-          key={block.stableId}
-          className={`incremark-block ${showBlockStatus && block.status === 'pending' ? 'pending' : ''}`}
-        >
-          <IncremarkRenderer node={block.node} components={components} />
-        </div>
-      ))}
+      {blocks.map((block) => {
+        const isPending = block.status === 'pending'
+        const classes = [
+          'incremark-block',
+          isPending ? 'incremark-pending' : 'incremark-completed',
+          block.isLastPending ? 'incremark-last-pending' : ''
+        ].filter(Boolean).join(' ')
+        
+        return (
+          <div key={block.stableId} className={classes}>
+            <IncremarkRenderer node={block.node} components={components} />
+          </div>
+        )
+      })}
     </div>
   )
 }

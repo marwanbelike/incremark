@@ -37,6 +37,13 @@ export default defineConfig({
               ]
             },
             {
+              text: 'Features',
+              items: [
+                { text: '⌨️ Typewriter Effect', link: '/guide/typewriter' },
+                { text: '📜 Auto-scroll', link: '/guide/auto-scroll' }
+              ]
+            },
+            {
               text: 'Advanced',
               items: [
                 { text: 'Custom Components', link: '/guide/custom-components' },
@@ -85,6 +92,13 @@ export default defineConfig({
               items: [
                 { text: 'Vue', link: '/zh/guide/vue' },
                 { text: 'React', link: '/zh/guide/react' }
+              ]
+            },
+            {
+              text: '功能',
+              items: [
+                { text: '⌨️ 打字机效果', link: '/zh/guide/typewriter' },
+                { text: '📜 自动滚动', link: '/zh/guide/auto-scroll' }
               ]
             },
             {

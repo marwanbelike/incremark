@@ -18,7 +18,8 @@
     "./utils": {
       "types": "./dist/utils/index.d.ts",
       "import": "./dist/utils/index.js"
-    }
+    },
+    "./transformer/styles.css": "./src/transformer/styles.css"
   },
   "files": [
     "dist",

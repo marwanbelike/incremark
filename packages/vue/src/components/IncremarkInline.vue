@@ -61,6 +61,9 @@ function escapeHtml(str: string): string {
     <del v-else-if="node.type === 'delete'">
       <IncremarkInline :nodes="(node.children as PhrasingContent[])" />
     </del>
+
+    <!-- 原始 HTML（用于 fade-mask 等特殊元素） -->
+    <span v-else-if="(node as any).type === 'html'" v-html="(node as any).value"></span>
   </template>
 </template>
 
