@@ -19,9 +19,18 @@ pnpm add @incremark/core @incremark/vue
 
 ## 快速开始
 
+**1. 引入样式**
+
+```ts
+import '@incremark/vue/style.css'
+```
+
+**2. 在组件中使用**
+
 ```vue
 <script setup>
 import { useIncremark, Incremark } from '@incremark/vue'
+import '@incremark/vue/style.css'
 
 const { blocks, append, finalize, reset } = useIncremark({ gfm: true })
 

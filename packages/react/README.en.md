@@ -19,8 +19,17 @@ pnpm add @incremark/core @incremark/react
 
 ## Quick Start
 
+**1. Import Styles**
+
+```tsx
+import '@incremark/react/styles.css'
+```
+
+**2. Use in Your Component**
+
 ```tsx
 import { useIncremark, Incremark } from '@incremark/react'
+import '@incremark/react/styles.css'
 
 function App() {
   const { blocks, append, finalize, reset } = useIncremark({ gfm: true })

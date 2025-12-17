@@ -19,9 +19,18 @@ pnpm add @incremark/core @incremark/vue
 
 ## Quick Start
 
+**1. Import Styles**
+
+```ts
+import '@incremark/vue/style.css'
+```
+
+**2. Use in Your Component**
+
 ```vue
 <script setup>
 import { useIncremark, Incremark } from '@incremark/vue'
+import '@incremark/vue/style.css'
 
 const { blocks, append, finalize, reset } = useIncremark({ gfm: true })
 

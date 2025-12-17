@@ -13,7 +13,8 @@
     },
     "./components/*": {
       "import": "./src/components/*.vue"
-    }
+    },
+    "./style.css": "./dist/index.css"
   },
   "files": [
     "dist",

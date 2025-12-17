@@ -19,8 +19,17 @@ pnpm add @incremark/core @incremark/react
 
 ## 快速开始
 
+**1. 引入样式**
+
+```tsx
+import '@incremark/react/styles.css'
+```
+
+**2. 在组件中使用**
+
 ```tsx
 import { useIncremark, Incremark } from '@incremark/react'
+import '@incremark/react/styles.css'
 
 function App() {
   const { blocks, append, finalize, reset } = useIncremark({ gfm: true })
