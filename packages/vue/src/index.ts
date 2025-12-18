@@ -2,6 +2,8 @@
 export { useIncremark, useStreamRenderer, useDevTools, useBlockTransformer } from './composables'
 export type {
   UseIncremarkOptions,
+  TypewriterOptions,
+  TypewriterControls,
   UseStreamRendererOptions,
   UseDevToolsOptions,
   UseBlockTransformerOptions,

@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import type { PhrasingContent } from 'mdast'
+import type { PhrasingContent, Text, HTML } from 'mdast'
 import type { TextChunk } from '@incremark/core'
 import IncremarkMath from './IncremarkMath.vue'
 
 // 扩展的文本节点类型（支持 chunks）
-interface TextNodeWithChunks {
-  type: 'text'
-  value: string
+interface TextNodeWithChunks extends Text {
   stableLength?: number
   chunks?: TextChunk[]
+}
+
+// Math 节点类型
+interface MathNode {
+  type: 'math' | 'inlineMath'
+  value: string
 }
 
 defineProps<{
@@ -22,8 +26,39 @@ function getStableText(node: TextNodeWithChunks): string {
   if (!node.chunks || node.chunks.length === 0) {
     return node.value
   }
-  // 使用 stableLength 来确定稳定部分
   return node.value.slice(0, node.stableLength ?? 0)
+}
+
+/**
+ * 类型守卫：检查是否是带 chunks 的文本节点
+ */
+function hasChunks(node: PhrasingContent): node is TextNodeWithChunks {
+  return node.type === 'text' && 'chunks' in node && Array.isArray((node as TextNodeWithChunks).chunks)
+}
+
+/**
+ * 获取节点的 chunks（类型安全）
+ */
+function getChunks(node: PhrasingContent): TextChunk[] | undefined {
+  if (hasChunks(node)) {
+    return node.chunks
+  }
+  return undefined
+}
+
+/**
+ * 类型守卫：检查是否是 HTML 节点
+ */
+function isHtmlNode(node: PhrasingContent): node is HTML {
+  return node.type === 'html'
+}
+
+/**
+ * 类型守卫：检查是否是 inlineMath 节点
+ * inlineMath 是 mdast-util-math 扩展的类型，不在标准 PhrasingContent 中
+ */
+function isInlineMath(node: PhrasingContent): node is PhrasingContent & MathNode {
+  return (node as unknown as MathNode).type === 'inlineMath'
 }
 </script>
 
@@ -32,17 +67,17 @@ function getStableText(node: TextNodeWithChunks): string {
     <!-- 文本（支持 chunks 渐入动画） -->
     <template v-if="node.type === 'text'">
       <!-- 稳定文本（已经显示过的部分，无动画） -->
-      {{ getStableText(node as unknown as TextNodeWithChunks) }}
+      {{ getStableText(node as TextNodeWithChunks) }}
       <!-- 新增的 chunk 部分（带渐入动画） -->
       <span 
-        v-for="(chunk, chunkIdx) in (node as any).chunks" 
-        :key="chunkIdx"
+        v-for="chunk in getChunks(node)" 
+        :key="chunk.createdAt"
         class="incremark-fade-in"
       >{{ chunk.text }}</span>
     </template>
 
     <!-- 行内公式 -->
-    <IncremarkMath v-else-if="(node as any).type === 'inlineMath'" :node="node as any" />
+    <IncremarkMath v-else-if="isInlineMath(node)" :node="(node as unknown as MathNode)" />
 
     <!-- 加粗 -->
     <strong v-else-if="node.type === 'strong'">
@@ -84,7 +119,7 @@ function getStableText(node: TextNodeWithChunks): string {
     </del>
 
     <!-- 原始 HTML -->
-    <span v-else-if="(node as any).type === 'html'" v-html="(node as any).value"></span>
+    <span v-else-if="isHtmlNode(node)" v-html="node.value"></span>
   </template>
 </template>
 

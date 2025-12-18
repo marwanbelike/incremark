@@ -1,4 +1,4 @@
-import type { RootContent } from 'mdast'
+import type { RootContent, Text, Parent } from 'mdast'
 
 /**
  * 文本块片段（用于渐入动画）
@@ -13,14 +13,20 @@ export interface TextChunk {
 /**
  * 扩展的文本节点（支持 chunks）
  */
-export interface TextNodeWithChunks {
-  type: string
-  value: string
+export interface TextNodeWithChunks extends Text {
   /** 稳定部分的长度（不需要动画） */
   stableLength?: number
   /** 临时的文本片段，用于渐入动画 */
   chunks?: TextChunk[]
-  [key: string]: any
+}
+
+/**
+ * AST 节点的通用类型（文本节点或容器节点）
+ */
+interface AstNode {
+  type: string
+  value?: string
+  children?: AstNode[]
 }
 
 /**
@@ -29,14 +35,11 @@ export interface TextNodeWithChunks {
 export function countChars(node: RootContent): number {
   let count = 0
 
-  function traverse(n: any): void {
-    // 文本类节点
+  function traverse(n: AstNode): void {
     if (n.value && typeof n.value === 'string') {
       count += n.value.length
       return
     }
-
-    // 容器节点，递归处理子节点
     if (n.children && Array.isArray(n.children)) {
       for (const child of n.children) {
         traverse(child)
@@ -44,7 +47,7 @@ export function countChars(node: RootContent): number {
     }
   }
 
-  traverse(node)
+  traverse(node as AstNode)
   return count
 }
 
@@ -56,6 +59,13 @@ export interface AccumulatedChunks {
   stableChars: number
   /** 累积的 chunk 列表 */
   chunks: TextChunk[]
+}
+
+/** chunk 范围信息 */
+interface ChunkRange {
+  start: number
+  end: number
+  chunk: TextChunk
 }
 
 /**
@@ -78,7 +88,7 @@ export function sliceAst(
   let charIndex = 0
   
   // 计算 chunks 在文本中的范围
-  let chunkRanges: { start: number, end: number, chunk: TextChunk }[] = []
+  const chunkRanges: ChunkRange[] = []
   if (accumulatedChunks && accumulatedChunks.chunks.length > 0) {
     let chunkStart = accumulatedChunks.stableChars
     for (const chunk of accumulatedChunks.chunks) {
@@ -91,7 +101,7 @@ export function sliceAst(
     }
   }
 
-  function process(n: any): any {
+  function process(n: AstNode): AstNode | null {
     if (remaining <= 0) return null
 
     // 文本类节点：截断 value，可能添加 chunks
@@ -105,7 +115,10 @@ export function sliceAst(
       const nodeEnd = charIndex + take
       charIndex += take
       
-      const result: TextNodeWithChunks = { ...n, value: slicedValue }
+      const result: AstNode & { stableLength?: number; chunks?: TextChunk[] } = { 
+        ...n, 
+        value: slicedValue 
+      }
       
       // 检查是否有 chunks 落在这个节点范围内
       if (chunkRanges.length > 0 && accumulatedChunks) {
@@ -147,7 +160,7 @@ export function sliceAst(
 
     // 容器节点：递归处理 children
     if (n.children && Array.isArray(n.children)) {
-      const newChildren: any[] = []
+      const newChildren: AstNode[] = []
       for (const child of n.children) {
         if (remaining <= 0) break
         const processed = process(child)
@@ -167,7 +180,7 @@ export function sliceAst(
     return { ...n }
   }
 
-  return process(node)
+  return process(node as AstNode) as RootContent | null
 }
 
 /**

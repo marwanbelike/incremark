@@ -1,5 +1,5 @@
 export { useIncremark } from './useIncremark'
-export type { UseIncremarkOptions } from './useIncremark'
+export type { UseIncremarkOptions, TypewriterOptions, TypewriterControls } from './useIncremark'
 
 export { useStreamRenderer } from './useStreamRenderer'
 export type { UseStreamRendererOptions } from './useStreamRenderer'

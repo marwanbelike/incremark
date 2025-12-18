@@ -54,9 +54,7 @@ export class BlockTransformer<T = unknown> {
   private lastTickTime = 0
   private isRunning = false
   private isPaused = false
-  // 累积的 chunks（用于 fade-in 动画）
-  private stableChars = 0  // 已经稳定显示的字符数
-  private chunks: TextChunk[] = []  // 累积的 chunks
+  private chunks: TextChunk[] = []  // 累积的 chunks（用于 fade-in 动画）
   private visibilityHandler: (() => void) | null = null
 
   constructor(options: TransformerOptions = {}) {
@@ -157,7 +155,6 @@ export class BlockTransformer<T = unknown> {
       currentProgress: 0,
       pendingBlocks: []
     }
-    this.stableChars = 0
     this.chunks = []
 
     this.emit()
@@ -174,7 +171,6 @@ export class BlockTransformer<T = unknown> {
       currentProgress: 0,
       pendingBlocks: []
     }
-    this.stableChars = 0
     this.chunks = []
     this.emit()
   }
@@ -216,9 +212,10 @@ export class BlockTransformer<T = unknown> {
     // 当前正在显示的 block
     if (this.state.currentBlock) {
       const total = this.countChars(this.state.currentBlock.node)
+      // fade-in 效果：传入累积的 chunks
       const accumulatedChunks: AccumulatedChunks | undefined = 
         this.options.effect === 'fade-in' && this.chunks.length > 0
-          ? { stableChars: this.stableChars, chunks: this.chunks }
+          ? { stableChars: 0, chunks: this.chunks }
           : undefined
       
       const displayNode = this.sliceNode(
@@ -398,7 +395,6 @@ export class BlockTransformer<T = unknown> {
 
     // 如果是 fade-in 效果，添加新的 chunk
     if (this.options.effect === 'fade-in' && this.state.currentProgress > prevProgress) {
-      const newChars = this.state.currentProgress - prevProgress
       // 从 block.node 中提取新增的字符
       const newText = this.extractText(block.node, prevProgress, this.state.currentProgress)
       if (newText.length > 0) {
@@ -417,7 +413,6 @@ export class BlockTransformer<T = unknown> {
       this.state.completedBlocks.push(block)
       this.state.currentBlock = null
       this.state.currentProgress = 0
-      this.stableChars = 0
       this.chunks = []
       this.processNext()
     }
@@ -430,7 +425,13 @@ export class BlockTransformer<T = unknown> {
     let result = ''
     let charIndex = 0
 
-    function traverse(n: any): boolean {
+    interface AstNode {
+      type: string
+      value?: string
+      children?: AstNode[]
+    }
+
+    function traverse(n: AstNode): boolean {
       if (charIndex >= end) return false
 
       if (n.value && typeof n.value === 'string') {
@@ -457,7 +458,7 @@ export class BlockTransformer<T = unknown> {
       return true
     }
 
-    traverse(node)
+    traverse(node as AstNode)
     return result
   }
 
@@ -475,7 +476,6 @@ export class BlockTransformer<T = unknown> {
     if (this.state.pendingBlocks.length > 0) {
       this.state.currentBlock = this.state.pendingBlocks.shift()!
       this.state.currentProgress = 0
-      this.stableChars = 0
       this.chunks = []
       this.emit()
       // 继续运行（rAF 已经在调度中）
