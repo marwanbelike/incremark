@@ -126,7 +126,7 @@ pnpm build
 - [ ] 🟠 Svelte / ⚡ Solid Support
 - [ ] 💭 AI Scenarios (thinking block, tool call, citations)
 
-[View full roadmap →](https://www.incremark.com/guide/roadmap)
+[View full roadmap →](https://www.incremark.com/roadmap.html)
 
 ## Documentation
 

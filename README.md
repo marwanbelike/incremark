@@ -126,7 +126,7 @@ pnpm build
 - [ ] 🟠 Svelte / ⚡ Solid 支持
 - [ ] 💭 AI 场景增强 (thinking block, tool call, 引用标注)
 
-[查看完整路线图 →](https://www.incremark.com/zh/guide/roadmap)
+[查看完整路线图 →](https://www.incremark.com/zh/roadmap)
 
 ## 文档
 
