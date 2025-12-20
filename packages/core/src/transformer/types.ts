@@ -1,4 +1,5 @@
 import type { RootContent } from 'mdast'
+import type { BlockStatus } from '../types'
 
 /**
  * 源 Block 类型（来自解析器）
@@ -9,7 +10,7 @@ export interface SourceBlock<T = unknown> {
   /** AST 节点 */
   node: RootContent
   /** 块状态 */
-  status: 'pending' | 'stable' | 'completed'
+  status: BlockStatus
   /** 用户自定义元数据 */
   meta?: T
 }

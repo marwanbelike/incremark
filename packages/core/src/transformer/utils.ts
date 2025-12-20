@@ -1,4 +1,5 @@
-import type { RootContent, Text, Parent } from 'mdast'
+import type { RootContent, Text } from 'mdast'
+import type { AstNode } from '../types'
 
 /**
  * 文本块片段（用于渐入动画）
@@ -18,15 +19,6 @@ export interface TextNodeWithChunks extends Text {
   stableLength?: number
   /** 临时的文本片段，用于渐入动画 */
   chunks?: TextChunk[]
-}
-
-/**
- * AST 节点的通用类型（文本节点或容器节点）
- */
-interface AstNode {
-  type: string
-  value?: string
-  children?: AstNode[]
 }
 
 /**
@@ -185,7 +177,36 @@ export function sliceAst(
 
 /**
  * 深拷贝 AST 节点
+ * 使用递归浅拷贝实现，比 JSON.parse/stringify 更高效
+ * 且保持对象结构完整性
  */
 export function cloneNode<T extends RootContent>(node: T): T {
-  return JSON.parse(JSON.stringify(node))
+  // 优先使用 structuredClone（Node 17+ / 现代浏览器）
+  if (typeof structuredClone === 'function') {
+    return structuredClone(node)
+  }
+  
+  // 回退到递归拷贝
+  return deepClone(node) as T
+}
+
+/**
+ * 递归深拷贝对象
+ */
+function deepClone<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => deepClone(item)) as T
+  }
+
+  const cloned = {} as T
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      cloned[key] = deepClone(obj[key])
+    }
+  }
+  return cloned
 }

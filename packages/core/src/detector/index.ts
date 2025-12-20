@@ -6,13 +6,33 @@
 
 import type { BlockContext, ContainerConfig, ContainerMatch } from '../types'
 
+// ============ 预编译正则表达式（性能优化） ============
+
+const RE_FENCE_START = /^(\s*)((`{3,})|(~{3,}))/
+const RE_EMPTY_LINE = /^\s*$/
+const RE_HEADING = /^#{1,6}\s/
+const RE_THEMATIC_BREAK = /^(\*{3,}|-{3,}|_{3,})\s*$/
+const RE_UNORDERED_LIST = /^(\s*)([-*+])\s/
+const RE_ORDERED_LIST = /^(\s*)(\d{1,9})[.)]\s/
+const RE_BLOCKQUOTE = /^\s{0,3}>/
+const RE_HTML_BLOCK_1 = /^\s{0,3}<(script|pre|style|textarea|!--|!DOCTYPE|\?|!\[CDATA\[)/i
+const RE_HTML_BLOCK_2 = /^\s{0,3}<\/?[a-zA-Z][a-zA-Z0-9-]*(\s|>|$)/
+const RE_TABLE_DELIMITER = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?$/
+const RE_ESCAPE_SPECIAL = /[.*+?^${}()|[\]\\]/g
+
+/** fence 结束模式缓存 */
+const fenceEndPatternCache = new Map<string, RegExp>()
+
+/** 容器模式缓存 */
+const containerPatternCache = new Map<string, RegExp>()
+
 // ============ 代码块检测 ============
 
 /**
  * 检测行是否是代码块 fence 开始
  */
 export function detectFenceStart(line: string): { char: string; length: number } | null {
-  const match = line.match(/^(\s*)((`{3,})|(~{3,}))/)
+  const match = line.match(RE_FENCE_START)
   if (match) {
     const fence = match[2]
     const char = fence[0]
@@ -29,7 +49,13 @@ export function detectFenceEnd(line: string, context: BlockContext): boolean {
     return false
   }
 
-  const pattern = new RegExp(`^\\s{0,3}${context.fenceChar}{${context.fenceLength},}\\s*$`)
+  // 使用缓存的正则表达式
+  const cacheKey = `${context.fenceChar}-${context.fenceLength}`
+  let pattern = fenceEndPatternCache.get(cacheKey)
+  if (!pattern) {
+    pattern = new RegExp(`^\\s{0,3}${context.fenceChar}{${context.fenceLength},}\\s*$`)
+    fenceEndPatternCache.set(cacheKey, pattern)
+  }
   return pattern.test(line)
 }
 
@@ -39,21 +65,21 @@ export function detectFenceEnd(line: string, context: BlockContext): boolean {
  * 检测是否是空行或仅包含空白字符
  */
 export function isEmptyLine(line: string): boolean {
-  return /^\s*$/.test(line)
+  return RE_EMPTY_LINE.test(line)
 }
 
 /**
  * 检测是否是标题行
  */
 export function isHeading(line: string): boolean {
-  return /^#{1,6}\s/.test(line)
+  return RE_HEADING.test(line)
 }
 
 /**
  * 检测是否是 thematic break（水平线）
  */
 export function isThematicBreak(line: string): boolean {
-  return /^(\*{3,}|-{3,}|_{3,})\s*$/.test(line.trim())
+  return RE_THEMATIC_BREAK.test(line.trim())
 }
 
 /**
@@ -61,13 +87,13 @@ export function isThematicBreak(line: string): boolean {
  */
 export function isListItemStart(line: string): { ordered: boolean; indent: number } | null {
   // 无序列表: - * +
-  const unordered = line.match(/^(\s*)([-*+])\s/)
+  const unordered = line.match(RE_UNORDERED_LIST)
   if (unordered) {
     return { ordered: false, indent: unordered[1].length }
   }
 
   // 有序列表: 1. 2) 等
-  const ordered = line.match(/^(\s*)(\d{1,9})[.)]\s/)
+  const ordered = line.match(RE_ORDERED_LIST)
   if (ordered) {
     return { ordered: true, indent: ordered[1].length }
   }
@@ -79,24 +105,21 @@ export function isListItemStart(line: string): { ordered: boolean; indent: numbe
  * 检测是否是引用块开始
  */
 export function isBlockquoteStart(line: string): boolean {
-  return /^\s{0,3}>/.test(line)
+  return RE_BLOCKQUOTE.test(line)
 }
 
 /**
  * 检测是否是 HTML 块
  */
 export function isHtmlBlock(line: string): boolean {
-  return (
-    /^\s{0,3}<(script|pre|style|textarea|!--|!DOCTYPE|\?|!\[CDATA\[)/i.test(line) ||
-    /^\s{0,3}<\/?[a-zA-Z][a-zA-Z0-9-]*(\s|>|$)/.test(line)
-  )
+  return RE_HTML_BLOCK_1.test(line) || RE_HTML_BLOCK_2.test(line)
 }
 
 /**
  * 检测表格分隔行
  */
 export function isTableDelimiter(line: string): boolean {
-  return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?$/.test(line.trim())
+  return RE_TABLE_DELIMITER.test(line.trim())
 }
 
 // ============ 容器检测 ============
@@ -114,10 +137,16 @@ export function detectContainer(line: string, config?: ContainerConfig): Contain
   const marker = config?.marker || ':'
   const minLength = config?.minMarkerLength || 3
 
-  const escapedMarker = marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const pattern = new RegExp(
-    `^(\\s*)(${escapedMarker}{${minLength},})(?:\\s+(\\w[\\w-]*))?(?:\\s+(.*))?\\s*$`
-  )
+  // 使用缓存的正则表达式
+  const cacheKey = `${marker}-${minLength}`
+  let pattern = containerPatternCache.get(cacheKey)
+  if (!pattern) {
+    const escapedMarker = marker.replace(RE_ESCAPE_SPECIAL, '\\$&')
+    pattern = new RegExp(
+      `^(\\s*)(${escapedMarker}{${minLength},})(?:\\s+(\\w[\\w-]*))?(?:\\s+(.*))?\\s*$`
+    )
+    containerPatternCache.set(cacheKey, pattern)
+  }
 
   const match = line.match(pattern)
   if (!match) {

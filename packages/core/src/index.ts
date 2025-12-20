@@ -19,6 +19,7 @@ export type {
   BlockContext,
   ContainerMatch,
   BlockTypeInfo,
+  AstNode,
   Root,
   RootContent
 } from './types'

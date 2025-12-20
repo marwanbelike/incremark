@@ -50,7 +50,7 @@ export class IncremarkParser {
   private context: BlockContext
   private options: ParserOptions
   /** 缓存的容器配置，避免重复计算 */
-  private cachedContainerConfig: ContainerConfig | undefined | null = null
+  private readonly containerConfig: ContainerConfig | undefined
   /** 上次 append 返回的 pending blocks，用于 getAst 复用 */
   private lastPendingBlocks: ParsedBlock[] = []
 
@@ -60,8 +60,8 @@ export class IncremarkParser {
       ...options
     }
     this.context = createInitialContext()
-    // 初始化容器配置缓存
-    this.cachedContainerConfig = this.computeContainerConfig()
+    // 初始化容器配置（构造时计算一次）
+    this.containerConfig = this.computeContainerConfig()
   }
 
   private generateBlockId(): string {
@@ -72,10 +72,6 @@ export class IncremarkParser {
     const containers = this.options.containers
     if (!containers) return undefined
     return containers === true ? {} : containers
-  }
-
-  private getContainerConfig(): ContainerConfig | undefined {
-    return this.cachedContainerConfig ?? undefined
   }
 
   private parse(text: string): Root {
@@ -148,7 +144,6 @@ export class IncremarkParser {
     let stableLine = -1
     let stableContext: BlockContext = this.context
     let tempContext = { ...this.context }
-    const containerConfig = this.getContainerConfig()
 
     for (let i = this.pendingStartLine; i < this.lines.length; i++) {
       const line = this.lines[i]
@@ -156,7 +151,7 @@ export class IncremarkParser {
       const wasInContainer = tempContext.inContainer
       const wasContainerDepth = tempContext.containerDepth
 
-      tempContext = updateContext(line, tempContext, containerConfig)
+      tempContext = updateContext(line, tempContext, this.containerConfig)
 
       if (wasInFencedCode && !tempContext.inFencedCode) {
         if (i < this.lines.length - 1) {
@@ -182,7 +177,7 @@ export class IncremarkParser {
         continue
       }
 
-      const stablePoint = this.checkStability(i, containerConfig)
+      const stablePoint = this.checkStability(i)
       if (stablePoint >= 0) {
         stableLine = stablePoint
         stableContext = { ...tempContext }
@@ -192,10 +187,7 @@ export class IncremarkParser {
     return { line: stableLine, contextAtLine: stableContext }
   }
 
-  private checkStability(
-    lineIndex: number,
-    containerConfig: ContainerConfig | undefined
-  ): number {
+  private checkStability(lineIndex: number): number {
     // 第一行永远不稳定
     if (lineIndex === 0) {
       return -1
@@ -237,10 +229,10 @@ export class IncremarkParser {
       }
 
       // 新容器开始
-      if (containerConfig !== undefined) {
-        const container = detectContainer(line, containerConfig)
+      if (this.containerConfig !== undefined) {
+        const container = detectContainer(line, this.containerConfig)
         if (container && !container.isEnd) {
-          const prevContainer = detectContainer(prevLine, containerConfig)
+          const prevContainer = detectContainer(prevLine, this.containerConfig)
           if (!prevContainer || prevContainer.isEnd) {
             return lineIndex - 1
           }

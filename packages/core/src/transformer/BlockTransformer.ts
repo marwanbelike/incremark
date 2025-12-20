@@ -1,4 +1,5 @@
 import type { RootContent } from 'mdast'
+import type { AstNode } from '../types'
 import type {
   SourceBlock,
   DisplayBlock,
@@ -424,12 +425,6 @@ export class BlockTransformer<T = unknown> {
   private extractText(node: RootContent, start: number, end: number): string {
     let result = ''
     let charIndex = 0
-
-    interface AstNode {
-      type: string
-      value?: string
-      children?: AstNode[]
-    }
 
     function traverse(n: AstNode): boolean {
       if (charIndex >= end) return false

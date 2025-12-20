@@ -11,6 +11,17 @@ export type BlockStatus =
   | 'completed'  // 确认完成，不会再改变
 
 /**
+ * AST 节点的通用接口（用于遍历）
+ * 统一定义，避免各模块重复声明
+ */
+export interface AstNode {
+  type: string
+  value?: string
+  children?: AstNode[]
+  [key: string]: unknown
+}
+
+/**
  * 解析出的块
  */
 export interface ParsedBlock {
