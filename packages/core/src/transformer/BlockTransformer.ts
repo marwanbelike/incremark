@@ -8,7 +8,7 @@ import type {
   TransformerPlugin,
   AnimationEffect
 } from './types'
-import { countChars as defaultCountChars, sliceAst as defaultSliceAst, type TextChunk, type AccumulatedChunks } from './utils'
+import { countChars as defaultCountChars, sliceAst as defaultSliceAst, appendToAst, type TextChunk, type AccumulatedChunks } from './utils'
 
 /**
  * Block Transformer
@@ -57,6 +57,14 @@ export class BlockTransformer<T = unknown> {
   private isPaused = false
   private chunks: TextChunk[] = []  // 累积的 chunks（用于 fade-in 动画）
   private visibilityHandler: (() => void) | null = null
+  
+  // ============ 性能优化：缓存机制 ============
+  /** 缓存的已截断 displayNode（稳定的部分，避免重复遍历） */
+  private cachedDisplayNode: RootContent | null = null
+  /** 缓存的字符数（避免重复计算） */
+  private cachedTotalChars: number | null = null
+  /** 当前缓存的进度（对应 cachedDisplayNode） */
+  private cachedProgress: number = 0
 
   constructor(options: TransformerOptions = {}) {
     this.options = {
@@ -100,7 +108,10 @@ export class BlockTransformer<T = unknown> {
     if (this.state.currentBlock) {
       const updated = blocks.find((b) => b.id === this.state.currentBlock!.id)
       if (updated && updated.node !== this.state.currentBlock.node) {
-        const oldTotal = this.countChars(this.state.currentBlock.node)
+        // 内容更新，清除缓存
+        this.clearCache()
+        
+        const oldTotal = this.cachedTotalChars ?? this.countChars(this.state.currentBlock.node)
         const newTotal = this.countChars(updated.node)
         
         // 如果字符数减少了（AST 结构变化，如 **xxx 变成 **xxx**）
@@ -126,13 +137,15 @@ export class BlockTransformer<T = unknown> {
    */
   update(block: SourceBlock<T>): void {
     if (this.state.currentBlock?.id === block.id) {
-      const oldTotal = this.countChars(this.state.currentBlock.node)
+      const oldTotal = this.cachedTotalChars ?? this.countChars(this.state.currentBlock.node)
       const newTotal = this.countChars(block.node)
 
       this.state.currentBlock = block
 
       // 如果内容增加了且之前暂停了，继续
       if (newTotal > oldTotal && !this.rafId && !this.isPaused && this.state.currentProgress >= oldTotal) {
+        // 内容变化，清除缓存
+        this.clearCache()
         this.startIfNeeded()
       }
     }
@@ -157,6 +170,7 @@ export class BlockTransformer<T = unknown> {
       pendingBlocks: []
     }
     this.chunks = []
+    this.clearCache()
 
     this.emit()
   }
@@ -173,6 +187,7 @@ export class BlockTransformer<T = unknown> {
       pendingBlocks: []
     }
     this.chunks = []
+    this.clearCache()
     this.emit()
   }
 
@@ -196,6 +211,7 @@ export class BlockTransformer<T = unknown> {
 
   /**
    * 获取用于渲染的 display blocks
+   * 优化：使用缓存的 displayNode，避免重复遍历已稳定的节点
    */
   getDisplayBlocks(): DisplayBlock<T>[] {
     const result: DisplayBlock<T>[] = []
@@ -212,22 +228,17 @@ export class BlockTransformer<T = unknown> {
 
     // 当前正在显示的 block
     if (this.state.currentBlock) {
-      const total = this.countChars(this.state.currentBlock.node)
-      // fade-in 效果：传入累积的 chunks
-      const accumulatedChunks: AccumulatedChunks | undefined = 
-        this.options.effect === 'fade-in' && this.chunks.length > 0
-          ? { stableChars: 0, chunks: this.chunks }
-          : undefined
+      // 使用缓存的字符数
+      const total = this.getTotalChars()
       
-      const displayNode = this.sliceNode(
-        this.state.currentBlock.node, 
-        this.state.currentProgress,
-        accumulatedChunks
-      )
+      // 如果进度变化了或缓存无效，更新缓存的 displayNode
+      if (this.state.currentProgress !== this.cachedProgress || !this.cachedDisplayNode) {
+        this.updateCachedDisplayNode()
+      }
 
       result.push({
         ...this.state.currentBlock,
-        displayNode: displayNode || { type: 'paragraph', children: [] },
+        displayNode: this.cachedDisplayNode || { type: 'paragraph', children: [] },
         progress: total > 0 ? this.state.currentProgress / total : 1,
         isDisplayComplete: false
       })
@@ -347,6 +358,7 @@ export class BlockTransformer<T = unknown> {
     if (!this.state.currentBlock && this.state.pendingBlocks.length > 0) {
       this.state.currentBlock = this.state.pendingBlocks.shift()!
       this.state.currentProgress = 0
+      this.clearCache() // 新 block，清除缓存
     }
 
     if (this.state.currentBlock) {
@@ -388,7 +400,8 @@ export class BlockTransformer<T = unknown> {
       return
     }
 
-    const total = this.countChars(block.node)
+    // 使用缓存的字符数，避免重复计算
+    const total = this.getTotalChars()
     const step = this.getStep()
     const prevProgress = this.state.currentProgress
     
@@ -409,12 +422,13 @@ export class BlockTransformer<T = unknown> {
     this.emit()
 
     if (this.state.currentProgress >= total) {
-      // 当前 block 完成，清空 chunks
+      // 当前 block 完成，清空 chunks 和缓存
       this.notifyComplete(block.node)
       this.state.completedBlocks.push(block)
       this.state.currentBlock = null
       this.state.currentProgress = 0
       this.chunks = []
+      this.clearCache()
       this.processNext()
     }
   }
@@ -472,6 +486,7 @@ export class BlockTransformer<T = unknown> {
       this.state.currentBlock = this.state.pendingBlocks.shift()!
       this.state.currentProgress = 0
       this.chunks = []
+      this.clearCache() // 新 block，清除缓存
       this.emit()
       // 继续运行（rAF 已经在调度中）
     } else {
@@ -531,6 +546,84 @@ export class BlockTransformer<T = unknown> {
         plugin.onComplete(node)
       }
     }
+  }
+
+  // ============ 缓存管理方法 ============
+
+  /**
+   * 更新缓存的 displayNode
+   * 使用真正的增量追加模式：只处理新增部分，不重复遍历已稳定的节点
+   */
+  private updateCachedDisplayNode(): void {
+    const block = this.state.currentBlock
+    if (!block) {
+      this.cachedDisplayNode = null
+      this.cachedProgress = 0
+      return
+    }
+
+    const currentProgress = this.state.currentProgress
+
+    // 如果进度减少了（内容更新导致），需要重新截断
+    if (currentProgress < this.cachedProgress) {
+      this.cachedDisplayNode = this.sliceNode(
+        block.node,
+        currentProgress,
+        this.getAccumulatedChunks()
+      )
+      this.cachedProgress = currentProgress
+      return
+    }
+
+    // 如果进度增加了，使用增量追加模式
+    if (currentProgress > this.cachedProgress && this.cachedDisplayNode) {
+      // 真正的增量追加：只处理新增部分，不重复遍历已稳定的节点
+      this.cachedDisplayNode = appendToAst(
+        this.cachedDisplayNode,
+        block.node,
+        this.cachedProgress,
+        currentProgress,
+        this.getAccumulatedChunks()
+      )
+      this.cachedProgress = currentProgress
+    } else if (!this.cachedDisplayNode) {
+      // 首次截断
+      this.cachedDisplayNode = this.sliceNode(
+        block.node,
+        currentProgress,
+        this.getAccumulatedChunks()
+      )
+      this.cachedProgress = currentProgress
+    }
+  }
+
+  /**
+   * 获取总字符数（带缓存）
+   */
+  private getTotalChars(): number {
+    if (this.cachedTotalChars === null && this.state.currentBlock) {
+      this.cachedTotalChars = this.countChars(this.state.currentBlock.node)
+    }
+    return this.cachedTotalChars ?? 0
+  }
+
+  /**
+   * 清除缓存（当 block 切换或内容更新时）
+   */
+  private clearCache(): void {
+    this.cachedDisplayNode = null
+    this.cachedTotalChars = null
+    this.cachedProgress = 0
+  }
+
+  /**
+   * 获取累积的 chunks（用于 fade-in 效果）
+   */
+  private getAccumulatedChunks(): AccumulatedChunks | undefined {
+    if (this.options.effect === 'fade-in' && this.chunks.length > 0) {
+      return { stableChars: 0, chunks: this.chunks }
+    }
+    return undefined
   }
 }
 
