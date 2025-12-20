@@ -2,6 +2,33 @@
 
 
 
+## v0.1.0...v0.1.1
+
+[compare changes](https://github.com/kingshuaishuai/incremark/compare/v0.1.0...v0.1.1)
+
+### 🚀 Enhancements
+
+- Introduce caching and performance optimizations in BlockTransformer and related components, enhance type definitions for AST nodes ([2486898](https://github.com/kingshuaishuai/incremark/commit/2486898))
+- Implement caching mechanism and performance improvements in BlockTransformer, optimize AST node processing and slicing functions ([2866ec7](https://github.com/kingshuaishuai/incremark/commit/2866ec7))
+
+### 📖 Documentation
+
+- Update links in README and documentation to reflect new website URLs ([f9b7492](https://github.com/kingshuaishuai/incremark/commit/f9b7492))
+- Add roadmap documentation ([abc270d](https://github.com/kingshuaishuai/incremark/commit/abc270d))
+- Enhance documentation for streaming Markdown features, including improvements in token detection, preprocessing, and typewriter animation performance ([375ba87](https://github.com/kingshuaishuai/incremark/commit/375ba87))
+
+### 🏡 Chore
+
+- Update changelog ([e31b254](https://github.com/kingshuaishuai/incremark/commit/e31b254))
+- Add @types/mdast as a devDependency and enhance type safety in IncremarkRenderer component ([1563e59](https://github.com/kingshuaishuai/incremark/commit/1563e59))
+- Update roadmap links in English and Chinese README files to reflect new URLs ([eaaee68](https://github.com/kingshuaishuai/incremark/commit/eaaee68))
+- Enhance release script ([a840076](https://github.com/kingshuaishuai/incremark/commit/a840076))
+- Release v0.1.1 ([918e8c7](https://github.com/kingshuaishuai/incremark/commit/918e8c7))
+
+### ❤️ Contributors
+
+- Wangyishuai <13122317939@163.com>
+
 ## v0.0.5...v0.1.0
 
 [compare changes](https://github.com/kingshuaishuai/incremark/compare/v0.0.5...v0.1.0)
