@@ -45,6 +45,7 @@
     }
   },
   "devDependencies": {
+    "@types/mdast": "^4.0.0",
     "@vue/compiler-sfc": "^3.4.0",
     "esbuild-plugin-vue3": "^0.4.2",
     "tsup": "^8.0.0",

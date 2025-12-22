@@ -54,7 +54,7 @@ import '@incremark/theme/styles.css'
 </style>
 ```
 
-> **Note**: The old style import paths are still available, but migration to the new theme package is recommended.
+> **Note**: The old style import paths (`@incremark/react/styles.css` and `@incremark/vue/style.css`) have been removed in v0.2.0. You must use `@incremark/theme/styles.css` instead.
 
 ## API Changes
 
@@ -404,12 +404,12 @@ If you previously used `useBlockTransformer` to implement typewriter effects, yo
 
 ### 2. Style Import Path Changes
 
-While the old style paths are still available, migration to `@incremark/theme/styles.css` is recommended.
+**Important**: The old style import paths (`@incremark/react/styles.css` and `@incremark/vue/style.css`) have been removed in v0.2.0. You must migrate to `@incremark/theme/styles.css`.
 
 ## Compatibility Notes
 
 - ✅ The old `useBlockTransformer` API is still available
-- ✅ The old style import paths are still available
+- ⚠️ The old style import paths have been removed - you must use `@incremark/theme/styles.css`
 - ✅ The `Incremark` component's `blocks` prop is still available
 - ✅ All existing custom components are still available
 

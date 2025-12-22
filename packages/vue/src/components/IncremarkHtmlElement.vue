@@ -125,14 +125,3 @@ function getAttrs(attrs: Record<string, string>): Record<string, string> {
   </component>
 </template>
 
-<style scoped>
-.incremark-html-element {
-  /* 保持原有样式 */
-}
-
-.incremark-unknown-child {
-  color: #999;
-  font-style: italic;
-}
-</style>
-

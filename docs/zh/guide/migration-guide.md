@@ -54,7 +54,7 @@ import '@incremark/theme/styles.css'
 </style>
 ```
 
-> **注意**：旧的样式导入路径仍然可用，但建议迁移到新的主题包。
+> **注意**：旧的样式导入路径（`@incremark/react/styles.css` 和 `@incremark/vue/style.css`）已在 v0.2.0 中移除。你必须使用 `@incremark/theme/styles.css`。
 
 ## API 变更
 
@@ -404,12 +404,12 @@ import { useIncremark, Incremark, ThemeProvider } from '@incremark/vue'
 
 ### 2. 样式导入路径变更
 
-虽然旧的样式路径仍然可用，但建议迁移到 `@incremark/theme/styles.css`。
+**重要**：旧的样式导入路径（`@incremark/react/styles.css` 和 `@incremark/vue/style.css`）已在 v0.2.0 中移除。你必须迁移到 `@incremark/theme/styles.css`。
 
 ## 兼容性说明
 
 - ✅ 旧的 `useBlockTransformer` API 仍然可用
-- ✅ 旧的样式导入路径仍然可用
+- ⚠️ 旧的样式导入路径已移除 - 你必须使用 `@incremark/theme/styles.css`
 - ✅ `Incremark` 组件的 `blocks` prop 仍然可用
 - ✅ 所有现有的自定义组件仍然可用
 
