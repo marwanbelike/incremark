@@ -14,6 +14,7 @@
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "example:vue": "pnpm --filter @incremark/example-vue dev",
     "example:react": "pnpm --filter @incremark/example-react dev",
+    "example:svelte": "pnpm --filter @incremark/example-svelte dev",
     "docs:dev": "pnpm --filter @incremark/docs dev",
     "docs:build": "pnpm --filter @incremark/docs build",
     "docs:preview": "pnpm --filter @incremark/docs preview",

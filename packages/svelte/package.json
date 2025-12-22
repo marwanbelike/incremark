@@ -1,0 +1,68 @@
+{
+  "name": "@incremark/svelte",
+  "version": "0.2.2",
+  "description": "Incremark Svelte 5 集成",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./components/*": {
+      "import": "./src/components/*.svelte"
+    },
+    "./style.css": "@incremark/theme/styles.css"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "dependencies": {
+    "@incremark/core": "workspace:*",
+    "@incremark/devtools": "workspace:*",
+    "@incremark/shared": "workspace:*",
+    "@incremark/theme": "workspace:*",
+    "shiki": "^3.20.0"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0",
+    "mermaid": "^10.0.0 || ^11.0.0",
+    "katex": "^0.16.0"
+  },
+  "peerDependenciesMeta": {
+    "mermaid": {
+      "optional": true
+    },
+    "katex": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.0",
+    "svelte": "^5.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  },
+  "keywords": [
+    "markdown",
+    "svelte",
+    "svelte5",
+    "streaming",
+    "ai"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kingshuaishuai/incremark.git",
+    "directory": "packages/svelte"
+  },
+  "homepage": "https://www.incremark.com/"
+}
+

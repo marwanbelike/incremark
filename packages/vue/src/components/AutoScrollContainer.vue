@@ -155,10 +155,3 @@ defineExpose({
     <slot />
   </div>
 </template>
-
-<style scoped>
-.auto-scroll-container {
-  overflow-y: auto;
-  height: 100%;
-}
-</style>

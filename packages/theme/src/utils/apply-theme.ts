@@ -38,7 +38,6 @@ export function applyTheme(
   theme: 'default' | 'dark' | DesignTokens | Partial<DesignTokens>
 ): void {
   const target: HTMLElement = element === document ? document.documentElement : (element as HTMLElement)
-  console.log('target', target)
 
   // 处理字符串主题名（使用类名切换）
   if (typeof theme === 'string') {

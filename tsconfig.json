@@ -19,6 +19,7 @@
       "@incremark/core": ["./packages/core/src/index.ts"],
       "@incremark/vue": ["./packages/vue/src/index.ts"],
       "@incremark/react": ["./packages/react/src/index.ts"],
+      "@incremark/svelte": ["./packages/svelte/src/index.ts"],
       "@incremark/devtools": ["./packages/devtools/src/index.ts"],
       "@incremark/shared": ["./packages/shared/src/index.ts"]
     }
