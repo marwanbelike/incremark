@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useIncremark, useDevTools, useProvideDefinations, Incremark, AutoScrollContainer } from '@incremark/vue'
+import { useIncremark, useDevTools, Incremark, AutoScrollContainer } from '@incremark/vue'
 // @ts-ignore
 import { math } from 'micromark-extension-math'
 // @ts-ignore
@@ -9,9 +9,6 @@ import { mathFromMarkdown } from 'mdast-util-math'
 import { useBenchmark } from '../composables'
 import { BenchmarkPanel, CustomInputPanel, CustomHeading } from './index'
 import type { Messages } from '../locales'
-
-// 提供 definitions context（用于脚注等）
-useProvideDefinations()
 
 const props = defineProps<{
   htmlEnabled: boolean
@@ -40,7 +37,7 @@ const incremark = useIncremark({
   }
 })
 
-const { markdown, blocks, completedBlocks, pendingBlocks, append, finalize, reset, render, typewriter, isFinalized, footnoteReferenceOrder } = incremark
+const { markdown, completedBlocks, pendingBlocks, append, finalize, reset, render, typewriter } = incremark
 
 useDevTools(incremark)
 
@@ -138,7 +135,7 @@ defineExpose({
         {{ t.customInput }}
       </label>
       <label class="checkbox typewriter-toggle">
-        <input type="checkbox" v-model="typewriter.enabled.value" />
+        <input type="checkbox" :checked="typewriter.enabled.value" @change="typewriter.setEnabled(!typewriter.enabled.value)" />
         {{ t.typewriterMode }}
       </label>
       <label class="checkbox auto-scroll-toggle">
@@ -204,11 +201,9 @@ defineExpose({
     <main :class="['content', typewriter.enabled.value && `effect-${typewriterEffect}`]">
       <AutoScrollContainer ref="scrollContainerRef" :enabled="autoScrollEnabled" class="scroll-container">
         <Incremark
-          :blocks="blocks"
+          :incremark="incremark"
           :components="useCustomComponents ? customComponents : {}"
           :show-block-status="true"
-          :is-finalized="isFinalized"
-          :footnote-reference-order="footnoteReferenceOrder"
         />
       </AutoScrollContainer>
     </main>

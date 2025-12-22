@@ -2,6 +2,8 @@
 import { computed, type Component } from 'vue'
 import type { ParsedBlock, RootContent } from '@incremark/core'
 import type { HTML } from 'mdast'
+import { useDefinationsContext } from '../composables/useDefinationsContext'
+import type { UseIncremarkReturn } from '../composables/useIncremark'
 import IncremarkHeading from './IncremarkHeading.vue'
 import IncremarkParagraph from './IncremarkParagraph.vue'
 import IncremarkCode from './IncremarkCode.vue'
@@ -33,7 +35,7 @@ export interface BlockWithStableId extends ParsedBlock {
 const props = withDefaults(
   defineProps<{
     /** 要渲染的块列表（来自 useIncremark 的 blocks） */
-    blocks: BlockWithStableId[]
+    blocks?: BlockWithStableId[]
     /** 自定义组件映射，key 为节点类型 */
     components?: ComponentMap
     /** 待处理块的样式类名 */
@@ -42,20 +44,38 @@ const props = withDefaults(
     completedClass?: string
     /** 是否显示块状态边框 */
     showBlockStatus?: boolean
-    /** 是否已完成（用于决定是否显示脚注） */
-    isFinalized?: boolean
-    /** 脚注引用的出现顺序（用于渲染脚注列表） */
-    footnoteReferenceOrder?: string[]
+    /** 可选：useIncremark 返回的对象（用于自动注入数据） */
+    incremark?: UseIncremarkReturn
   }>(),
   {
+    blocks: () => [],
     components: () => ({}),
     pendingClass: 'incremark-pending',
     completedClass: 'incremark-completed',
-    showBlockStatus: false,
-    isFinalized: false,
-    footnoteReferenceOrder: () => []
+    showBlockStatus: false
   }
 )
+
+// 从 context 获取 footnoteReferenceOrder（如果有的话）
+let footnoteReferenceOrder
+try {
+  const context = useDefinationsContext()
+  footnoteReferenceOrder = context.footnoteReferenceOrder
+} catch {
+  // 如果没有 context，使用空数组
+  footnoteReferenceOrder = computed(() => [])
+}
+
+// 计算实际使用的 blocks 和 isFinalized
+const actualBlocks = computed<BlockWithStableId[]>(() => props.incremark?.blocks.value || props.blocks || [])
+const actualIsFinalized = computed(() => {
+  if (props.incremark) {
+    return props.incremark.isFinalized.value
+  }
+  // 如果手动传入 blocks，自动判断是否所有 block 都是 completed
+  const blocks = props.blocks || []
+  return blocks.length > 0 && blocks.every(b => b.status === 'completed')
+})
 
 // 默认组件映射
 const defaultComponents: Record<string, Component> = {
@@ -85,7 +105,7 @@ function getComponent(type: string): Component {
 <template>
   <div class="incremark">
     <!-- 主要内容块 -->
-    <template v-for="block in blocks">
+    <template v-for="block in actualBlocks">
       <div
         v-if="block.node.type !== 'definition' && block.node.type !== 'footnoteDefinition'"
         :key="block.stableId"
@@ -104,9 +124,8 @@ function getComponent(type: string): Component {
     </template>
 
     <!-- 脚注列表（仅在 finalize 后显示） -->
-    <IncremarkFootnotes 
-      v-if="isFinalized && footnoteReferenceOrder.length > 0"
-      :footnote-reference-order="footnoteReferenceOrder"
+    <IncremarkFootnotes
+      v-if="actualIsFinalized && (footnoteReferenceOrder as any).value?.length > 0"
     />
   </div>
 </template>

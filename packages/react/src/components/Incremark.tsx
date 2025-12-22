@@ -2,6 +2,8 @@ import React from 'react'
 import type { ParsedBlock } from '@incremark/core'
 import { IncremarkRenderer } from './IncremarkRenderer'
 import { IncremarkFootnotes } from './IncremarkFootnotes'
+import type { UseIncremarkReturn } from '../hooks/useIncremark'
+import { IncremarkContainerProvider } from './IncremarkContainerProvider'
 
 interface BlockWithStableId extends ParsedBlock {
   stableId: string
@@ -10,17 +12,15 @@ interface BlockWithStableId extends ParsedBlock {
 
 export interface IncremarkProps {
   /** 要渲染的块列表 */
-  blocks: BlockWithStableId[]
+  blocks?: BlockWithStableId[]
   /** 自定义组件映射 */
   components?: Partial<Record<string, React.ComponentType<{ node: any }>>>
   /** 是否显示块状态（待处理块边框） */
   showBlockStatus?: boolean
   /** 自定义类名 */
   className?: string
-  /** 是否已完成（用于决定是否显示脚注） */
-  isFinalized?: boolean
-  /** 脚注引用的出现顺序（用于渲染脚注列表） */
-  footnoteReferenceOrder?: string[]
+  /** 可选：useIncremark 返回的对象（用于自动提供 context） */
+  incremark?: UseIncremarkReturn
 }
 
 /**
@@ -30,19 +30,70 @@ export interface IncremarkProps {
  * ```tsx
  * import { useIncremark, Incremark } from '@incremark/react'
  *
+ * // 推荐用法: 传入 incremark 对象（自动提供 context）
  * function App() {
- *   const { blocks } = useIncremark()
- *   return <Incremark blocks={blocks} />
+ *   const incremark = useIncremark()
+ *   return <Incremark incremark={incremark} />
  * }
  * ```
  */
-export const Incremark: React.FC<IncremarkProps> = ({
+export const Incremark: React.FC<IncremarkProps> = (props) => {
+  const {
+    blocks: propsBlocks,
+    components,
+    showBlockStatus = true,
+    className = '',
+    incremark
+  } = props
+
+  // 如果传入了 incremark 对象，自动提供 context
+  if (incremark) {
+    const { blocks, isFinalized, _definitionsContextValue } = incremark
+    return (
+      <IncremarkContainerProvider definitions={_definitionsContextValue}>
+        <IncremarkInternal
+          blocks={blocks}
+          components={components}
+          showBlockStatus={showBlockStatus}
+          className={className}
+          isFinalized={isFinalized}
+        />
+      </IncremarkContainerProvider>
+    )
+  }
+
+  // 否则使用传入的 props，自动判断 isFinalized
+  const blocks = propsBlocks || []
+  const isFinalized = blocks.length > 0 && blocks.every(b => b.status === 'completed')
+
+  return (
+    <IncremarkInternal
+      blocks={blocks}
+      components={components}
+      showBlockStatus={showBlockStatus}
+      className={className}
+      isFinalized={isFinalized}
+    />
+  )
+}
+
+/**
+ * 内部渲染组件（不对外暴露）
+ */
+interface IncremarkInternalProps {
+  blocks: BlockWithStableId[]
+  components?: Partial<Record<string, React.ComponentType<{ node: any }>>>
+  showBlockStatus: boolean
+  className: string
+  isFinalized: boolean
+}
+
+const IncremarkInternal: React.FC<IncremarkInternalProps> = ({
   blocks,
   components,
-  showBlockStatus = true,
-  className = '',
-  isFinalized = false,
-  footnoteReferenceOrder = []
+  showBlockStatus,
+  className,
+  isFinalized
 }) => {
   return (
     <div className={`incremark ${className}`}>
@@ -60,7 +111,7 @@ export const Incremark: React.FC<IncremarkProps> = ({
           showBlockStatus && 'incremark-show-status',
           block.isLastPending && 'incremark-last-pending'
         ].filter(Boolean).join(' ')
-        
+
         return (
           <div key={block.stableId} className={classes}>
             <IncremarkRenderer node={block.node} components={components} />
@@ -69,8 +120,8 @@ export const Incremark: React.FC<IncremarkProps> = ({
       })}
 
       {/* 脚注列表（仅在 finalize 后显示） */}
-      {isFinalized && footnoteReferenceOrder.length > 0 && (
-        <IncremarkFootnotes footnoteReferenceOrder={footnoteReferenceOrder} />
+      {isFinalized && (
+        <IncremarkFootnotes />
       )}
     </div>
   )

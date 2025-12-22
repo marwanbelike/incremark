@@ -1,20 +1,15 @@
-import { ref, shallowRef, computed, markRaw, watch, onUnmounted, type Ref, type ComputedRef } from 'vue'
+import { ref, shallowRef, computed, markRaw, type ComputedRef } from 'vue'
 import {
-  IncremarkParser,
   createIncremarkParser,
-  createBlockTransformer,
-  defaultPlugins,
   type ParserOptions,
   type ParsedBlock,
   type IncrementalUpdate,
   type Root,
-  type RootContent,
-  type DisplayBlock,
   type TransformerPlugin,
-  type AnimationEffect,
-  type BlockTransformer
+  type AnimationEffect
 } from '@incremark/core'
 import { useProvideDefinations } from './useProvideDefinations'
+import { useTypewriter } from './useTypewriter'
 
 /** 打字机效果配置 */
 export interface TypewriterOptions {
@@ -41,8 +36,10 @@ export interface UseIncremarkOptions extends ParserOptions {
 
 /** 打字机控制对象 */
 export interface TypewriterControls {
-  /** 是否启用 */
-  enabled: Ref<boolean>
+  /** 是否启用（只读） */
+  enabled: ComputedRef<boolean>
+  /** 设置是否启用 */
+  setEnabled: (enabled: boolean) => void
   /** 是否正在处理中 */
   isProcessing: ComputedRef<boolean>
   /** 是否已暂停 */
@@ -95,15 +92,20 @@ export type UseIncremarkReturn = ReturnType<typeof useIncremark>
  * ```
  */
 export function useIncremark(options: UseIncremarkOptions = {}) {
-  const { setDefinations, setFootnoteDefinitions } = useProvideDefinations();
+  // 内部自动提供 definitions context
+  const { setDefinations, setFootnoteDefinitions, setFootnoteReferenceOrder } = useProvideDefinations()
+
   // 解析器
   const parser = createIncremarkParser({
     ...options,
     onChange: (state) => {
-      setDefinations(state.definitions);
-      setFootnoteDefinitions(state.footnoteDefinitions);
+      setDefinations(state.definitions)
+      setFootnoteDefinitions(state.footnoteDefinitions)
+      // 调用用户提供的 onChange
+      options.onChange?.(state)
     }
   })
+
   const completedBlocks = shallowRef<ParsedBlock[]>([])
   const pendingBlocks = shallowRef<ParsedBlock[]>([])
   const isLoading = ref(false)
@@ -111,32 +113,12 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
   const isFinalized = ref(false)
   const footnoteReferenceOrder = ref<string[]>([])
 
-  // 打字机相关状态
-  const typewriterEnabled = ref(options.typewriter?.enabled ?? !!options.typewriter)
-  const displayBlocksRef = shallowRef<DisplayBlock<RootContent>[]>([])
-  const isTypewriterProcessing = ref(false)
-  const isTypewriterPaused = ref(false)
-  const typewriterEffect = ref<AnimationEffect>(options.typewriter?.effect ?? 'none')
-  const typewriterCursor = ref(options.typewriter?.cursor ?? '|')
-
-  // 创建 transformer（如果有 typewriter 配置）
-  let transformer: BlockTransformer<RootContent> | null = null
-
-  if (options.typewriter) {
-    const twOptions = options.typewriter
-    transformer = createBlockTransformer<RootContent>({
-      charsPerTick: twOptions.charsPerTick ?? [1, 3],
-      tickInterval: twOptions.tickInterval ?? 30,
-      effect: twOptions.effect ?? 'none',
-      pauseOnHidden: twOptions.pauseOnHidden ?? true,
-      plugins: twOptions.plugins ?? defaultPlugins,
-      onChange: (blocks) => {
-        displayBlocksRef.value = blocks as DisplayBlock<RootContent>[]
-        isTypewriterProcessing.value = transformer?.isProcessing() ?? false
-        isTypewriterPaused.value = transformer?.isPausedState() ?? false
-      }
-    })
-  }
+  // 使用 useTypewriter composable 管理打字机效果
+  const { blocks, typewriter, transformer } = useTypewriter({
+    typewriter: options.typewriter,
+    completedBlocks,
+    pendingBlocks
+  })
 
   // AST
   const ast = computed<Root>(() => ({
@@ -146,115 +128,6 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
       ...pendingBlocks.value.map((b) => b.node)
     ]
   }))
-
-  // 将 completedBlocks 转换为 SourceBlock 格式
-  const sourceBlocks = computed(() => {
-    return completedBlocks.value.map(block => ({
-      id: block.id,
-      node: block.node,
-      status: block.status as 'pending' | 'stable' | 'completed'
-    }))
-  })
-
-  // 监听 sourceBlocks 变化，推送给 transformer
-  if (transformer) {
-    watch(
-      sourceBlocks,
-      (blocks) => {
-        transformer!.push(blocks)
-
-        // 更新正在显示的 block
-        const currentDisplaying = displayBlocksRef.value.find((b) => !b.isDisplayComplete)
-        if (currentDisplaying) {
-          const updated = blocks.find((b) => b.id === currentDisplaying.id)
-          if (updated) {
-            transformer!.update(updated)
-          }
-        }
-      },
-      { immediate: true, deep: true }
-    )
-  }
-
-  /**
-   * 在节点末尾添加光标
-   */
-  function addCursorToNode(node: RootContent, cursor: string): RootContent {
-    const cloned = JSON.parse(JSON.stringify(node))
-
-    function addToLast(n: { children?: unknown[]; type?: string; value?: string }): boolean {
-      if (n.children && n.children.length > 0) {
-        for (let i = n.children.length - 1; i >= 0; i--) {
-          if (addToLast(n.children[i] as { children?: unknown[]; type?: string; value?: string })) {
-            return true
-          }
-        }
-        n.children.push({ type: 'text', value: cursor })
-        return true
-      }
-      if (n.type === 'text' && typeof n.value === 'string') {
-        n.value += cursor
-        return true
-      }
-      if (typeof n.value === 'string') {
-        n.value += cursor
-        return true
-      }
-      return false
-    }
-
-    addToLast(cloned)
-    return cloned
-  }
-
-  // 原始 blocks（不经过打字机）
-  const rawBlocks = computed(() => {
-    const result: Array<ParsedBlock & { stableId: string }> = []
-
-    for (const block of completedBlocks.value) {
-      result.push({ ...block, stableId: block.id })
-    }
-
-    for (let i = 0; i < pendingBlocks.value.length; i++) {
-      result.push({
-        ...pendingBlocks.value[i],
-        stableId: `pending-${i}`
-      })
-    }
-
-    return result
-  })
-
-  // 最终用于渲染的 blocks
-  const blocks = computed(() => {
-    // 未启用打字机或没有 transformer：返回原始 blocks
-    if (!typewriterEnabled.value || !transformer) {
-      return rawBlocks.value
-    }
-
-    // 启用打字机：使用 displayBlocks
-    return displayBlocksRef.value.map((db, index) => {
-      const isPending = !db.isDisplayComplete
-      const isLastPending = isPending && index === displayBlocksRef.value.length - 1
-
-      // typing 效果时添加光标
-      let node = db.displayNode
-      if (typewriterEffect.value === 'typing' && isLastPending) {
-        node = addCursorToNode(db.displayNode, typewriterCursor.value)
-      }
-
-      return {
-        id: db.id,
-        stableId: db.id,
-        status: (db.isDisplayComplete ? 'completed' : 'pending') as 'pending' | 'stable' | 'completed',
-        isLastPending,
-        node,
-        startOffset: 0,
-        endOffset: 0,
-        rawText: ''
-      }
-    })
-  })
 
   function append(chunk: string): IncrementalUpdate {
     isLoading.value = true
@@ -269,9 +142,10 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
       ]
     }
     pendingBlocks.value = update.pending.map((b) => markRaw(b))
-    
+
     // 更新脚注引用顺序
     footnoteReferenceOrder.value = update.footnoteReferenceOrder
+    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
 
     return update
   }
@@ -290,9 +164,10 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
     pendingBlocks.value = []
     isLoading.value = false
     isFinalized.value = true
-    
+
     // 更新脚注引用顺序
     footnoteReferenceOrder.value = update.footnoteReferenceOrder
+    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
 
     return update
   }
@@ -323,50 +198,10 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
     isLoading.value = false
     isFinalized.value = true
     footnoteReferenceOrder.value = update.footnoteReferenceOrder
-    console.log(">>>> footnoteReferenceOrder3", update.footnoteReferenceOrder)
+    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
+
     return update
   }
-
-  // 打字机控制对象
-  const typewriter: TypewriterControls = {
-    enabled: typewriterEnabled,
-    isProcessing: computed(() => isTypewriterProcessing.value),
-    isPaused: computed(() => isTypewriterPaused.value),
-    effect: computed(() => typewriterEffect.value),
-    skip: () => transformer?.skip(),
-    pause: () => {
-      transformer?.pause()
-      isTypewriterPaused.value = true
-    },
-    resume: () => {
-      transformer?.resume()
-      isTypewriterPaused.value = false
-    },
-    setOptions: (opts) => {
-      if (opts.enabled !== undefined) {
-        typewriterEnabled.value = opts.enabled
-      }
-      if (opts.charsPerTick !== undefined || opts.tickInterval !== undefined || opts.effect !== undefined || opts.pauseOnHidden !== undefined) {
-        transformer?.setOptions({
-          charsPerTick: opts.charsPerTick,
-          tickInterval: opts.tickInterval,
-          effect: opts.effect,
-          pauseOnHidden: opts.pauseOnHidden
-        })
-      }
-      if (opts.effect !== undefined) {
-        typewriterEffect.value = opts.effect
-      }
-      if (opts.cursor !== undefined) {
-        typewriterCursor.value = opts.cursor
-      }
-    }
-  }
-
-  // 清理
-  onUnmounted(() => {
-    transformer?.destroy()
-  })
 
   return {
     /** 已收集的完整 Markdown 字符串 */

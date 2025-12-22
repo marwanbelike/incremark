@@ -66,7 +66,7 @@ export const IncremarkInline: React.FC<IncremarkInlineProps> = ({ nodes }) => {
               <React.Fragment key={i}>
                 {getStableText(textNode)}
                 {textNode.chunks.map((chunk: { createdAt: number; text: string }) => (
-                  <span key={chunk.createdAt} className="incremark-fade-in">
+                  <span data-chunk-key={chunk.createdAt} key={chunk.createdAt} className="incremark-fade-in">
                     {chunk.text}
                   </span>
                 ))}

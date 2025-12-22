@@ -1,12 +1,13 @@
 /**
  * 脚注列表组件
- * 
+ *
  * 在文档底部渲染所有脚注定义，按引用出现的顺序排列
- * 
+ *
  * @component IncremarkFootnotes
- * 
+ *
  * @remarks
  * 样式定义在 @incremark/theme 中的 footnotes.less
+ * footnoteReferenceOrder 自动从 context 获取，无需手动传递
  */
 
 import React from 'react'
@@ -14,30 +15,21 @@ import type { RootContent } from 'mdast'
 import { useDefinitions } from '../contexts/DefinitionsContext'
 import { IncremarkRenderer } from './IncremarkRenderer'
 
-export interface IncremarkFootnotesProps {
-  /** 脚注引用的出现顺序（从 parser 获取） */
-  footnoteReferenceOrder: string[]
-}
-
 /**
  * IncremarkFootnotes 组件
- * 
+ *
  * 渲染文档底部的脚注列表，支持：
  * - 按引用出现顺序排列
  * - 双向跳转（引用 ↔ 定义）
  * - 高亮当前查看的脚注
- * 
+ *
  * @example
  * ```tsx
- * <IncremarkFootnotes 
- *   footnoteReferenceOrder={parser.getFootnoteReferenceOrder()} 
- * />
+ * <IncremarkFootnotes />
  * ```
  */
-export const IncremarkFootnotes: React.FC<IncremarkFootnotesProps> = ({ 
-  footnoteReferenceOrder 
-}) => {
-  const { footnoteDefinitions } = useDefinitions()
+export const IncremarkFootnotes: React.FC = () => {
+  const { footnoteDefinitions, footnoteReferenceOrder } = useDefinitions()
 
   // 按引用顺序排列的脚注列表（只显示已有定义的脚注）
   const orderedFootnotes = React.useMemo(() => {

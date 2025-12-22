@@ -26,7 +26,8 @@ export {
   type IncremarkHtmlElementProps,
   type HtmlElementNode
 } from './components'
-export { IncremarkFootnotes, type IncremarkFootnotesProps } from './components'
+export { IncremarkFootnotes } from './components'
+export { IncremarkContainerProvider, type IncremarkContainerProviderProps } from './components'
 export { ThemeProvider, type ThemeProviderProps } from './ThemeProvider'
 
 // Definitions Context

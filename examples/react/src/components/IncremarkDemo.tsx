@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { 
   useIncremark, 
   useDevTools, 
@@ -41,12 +41,12 @@ export function IncremarkDemo({ htmlEnabled, sampleMarkdown, t }: IncremarkDemoP
       cursor: '|'
     }
   })
-  const { markdown, blocks, completedBlocks, pendingBlocks, append, finalize, reset, render, typewriter, isFinalized, footnoteReferenceOrder } = incremark
+  const { markdown, completedBlocks, pendingBlocks, append, finalize, reset, render, typewriter } = incremark
 
   useDevTools(incremark)
 
-  // 监听打字机配置变化
-  useMemo(() => {
+  // 监听打字机配置变化（副作用必须用 useEffect，避免 render 阶段触发更新导致卡顿/不生效）
+  useEffect(() => {
     typewriter.setOptions({
       charsPerTick: computedCharsPerTick,
       tickInterval: typewriterInterval,
@@ -190,11 +190,9 @@ export function IncremarkDemo({ htmlEnabled, sampleMarkdown, t }: IncremarkDemoP
 
       <main className={`content ${typewriter.enabled ? `effect-${typewriterEffect}` : ''}`}>
         <AutoScrollContainer ref={scrollContainerRef} enabled={autoScrollEnabled} className="scroll-container">
-          <Incremark 
-            blocks={blocks} 
-            showBlockStatus={true} 
-            isFinalized={isFinalized}
-            footnoteReferenceOrder={footnoteReferenceOrder}
+          <Incremark
+            incremark={incremark}
+            showBlockStatus={true}
           />
         </AutoScrollContainer>
       </main>
