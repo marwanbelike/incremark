@@ -234,6 +234,496 @@ watch(() => props.node.value, render)
 </template>
 ```
 
+## Custom Containers
+
+Incremark supports custom container components for directive syntax like `:::warning`, `:::info`, `:::tip`, etc.
+
+Pass custom containers via the `customContainers` prop:
+
+::: code-group
+
+```vue [Vue]
+<script setup>
+import { useIncremark, Incremark } from '@incremark/vue'
+import CustomWarningContainer from './CustomWarningContainer.vue'
+import CustomInfoContainer from './CustomInfoContainer.vue'
+import CustomTipContainer from './CustomTipContainer.vue'
+
+const incremark = useIncremark({ 
+  gfm: true,
+  containers: true  // Enable container support
+})
+
+const customContainers = {
+  warning: CustomWarningContainer,
+  info: CustomInfoContainer,
+  tip: CustomTipContainer,
+}
+</script>
+
+<template>
+  <Incremark 
+    :incremark="incremark"
+    :custom-containers="customContainers"
+  />
+</template>
+```
+
+```tsx [React]
+import { useIncremark, Incremark } from '@incremark/react'
+import { CustomWarningContainer } from './CustomWarningContainer'
+import { CustomInfoContainer } from './CustomInfoContainer'
+import { CustomTipContainer } from './CustomTipContainer'
+
+function App() {
+  const incremark = useIncremark({ 
+    gfm: true,
+    containers: true  // Enable container support
+  })
+
+  const customContainers = {
+    warning: CustomWarningContainer,
+    info: CustomInfoContainer,
+    tip: CustomTipContainer,
+  }
+
+  return (
+    <Incremark 
+      incremark={incremark}
+      customContainers={customContainers}
+    />
+  )
+}
+```
+
+```svelte [Svelte]
+<script lang="ts">
+  import { useIncremark, Incremark } from '@incremark/svelte'
+  import CustomWarningContainer from './CustomWarningContainer.svelte'
+  import CustomInfoContainer from './CustomInfoContainer.svelte'
+  import CustomTipContainer from './CustomTipContainer.svelte'
+
+  const incremark = useIncremark({ 
+    gfm: true,
+    containers: true  // Enable container support
+  })
+
+  const customContainers = {
+    warning: CustomWarningContainer,
+    info: CustomInfoContainer,
+    tip: CustomTipContainer,
+  }
+</script>
+
+<Incremark 
+  {incremark}
+  {customContainers}
+/>
+```
+
+:::
+
+### Container Component Props
+
+Custom container components receive the following props:
+
+- `name`: The container name (e.g., `"warning"`, `"info"`, `"tip"`)
+- `options`: Parsed attributes from the directive (e.g., `{title: "Custom Title"}`)
+- `children` / `slot`: The container content (rendered as children/slot)
+
+### Example: Custom Warning Container
+
+::: code-group
+
+```vue [Vue]
+<!-- CustomWarningContainer.vue -->
+<script setup lang="ts">
+defineProps<{
+  name: string
+  options?: Record<string, any>
+}>()
+</script>
+
+<template>
+  <div class="custom-warning-container">
+    <div class="custom-warning-header">
+      <span class="custom-warning-icon">⚠️</span>
+      <span class="custom-warning-title">
+        {{ options?.title || 'Warning' }}
+      </span>
+    </div>
+    <div class="custom-warning-content">
+      <slot />
+    </div>
+  </div>
+</template>
+```
+
+```tsx [React]
+// CustomWarningContainer.tsx
+import React from 'react'
+
+export interface CustomWarningContainerProps {
+  name: string
+  options?: Record<string, any>
+  children?: React.ReactNode
+}
+
+export const CustomWarningContainer: React.FC<CustomWarningContainerProps> = ({ 
+  options, 
+  children 
+}) => {
+  return (
+    <div className="custom-warning-container">
+      <div className="custom-warning-header">
+        <span className="custom-warning-icon">⚠️</span>
+        <span className="custom-warning-title">
+          {options?.title || 'Warning'}
+        </span>
+      </div>
+      <div className="custom-warning-content">
+        {children}
+      </div>
+    </div>
+  )
+}
+```
+
+```svelte [Svelte]
+<!-- CustomWarningContainer.svelte -->
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  
+  interface Props {
+    name: string
+    options?: Record<string, any>
+    children?: Snippet;
+  }
+
+  let { options, children }: Props = $props()
+</script>
+
+<div class="custom-warning-container">
+  <div class="custom-warning-header">
+    <span class="custom-warning-icon">⚠️</span>
+    <span class="custom-warning-title">
+      {options?.title || 'Warning'}
+    </span>
+  </div>
+  <div class="custom-warning-content">
+    {#if children}
+      {@render children()}
+    {/if}
+  </div>
+</div>
+```
+
+:::
+
+### Usage in Markdown
+
+```markdown
+:::warning
+This is a warning message.
+:::
+
+:::info{title="Information"}
+This is an info message with a custom title.
+:::
+
+:::tip
+This is a tip message.
+:::
+```
+
+## Custom Code Blocks
+
+Incremark supports custom code block rendering components for specific languages. This allows you to render code blocks with custom logic, such as ECharts charts, interactive demos, etc.
+
+Pass custom code blocks via the `customCodeBlocks` prop:
+
+::: code-group
+
+```vue [Vue]
+<script setup>
+import { useIncremark, Incremark } from '@incremark/vue'
+import CustomEchartCodeBlock from './CustomEchartCodeBlock.vue'
+
+const incremark = useIncremark({ gfm: true })
+
+const customCodeBlocks = {
+  echarts: CustomEchartCodeBlock,
+}
+</script>
+
+<template>
+  <Incremark 
+    :incremark="incremark"
+    :custom-code-blocks="customCodeBlocks"
+  />
+</template>
+```
+
+```tsx [React]
+import { useIncremark, Incremark } from '@incremark/react'
+import { CustomEchartCodeBlock } from './CustomEchartCodeBlock'
+
+function App() {
+  const incremark = useIncremark({ gfm: true })
+
+  const customCodeBlocks = {
+    echarts: CustomEchartCodeBlock,
+  }
+
+  return (
+    <Incremark 
+      incremark={incremark}
+      customCodeBlocks={customCodeBlocks}
+    />
+  )
+}
+```
+
+```svelte [Svelte]
+<script lang="ts">
+  import { useIncremark, Incremark } from '@incremark/svelte'
+  import CustomEchartCodeBlock from './CustomEchartCodeBlock.svelte'
+
+  const incremark = useIncremark({ gfm: true })
+
+  const customCodeBlocks = {
+    echarts: CustomEchartCodeBlock,
+  }
+</script>
+
+<Incremark 
+  {incremark}
+  {customCodeBlocks}
+/>
+```
+
+:::
+
+### Code Block Component Props
+
+Custom code block components receive the following props:
+
+- `codeStr`: The code string content
+- `lang`: The language identifier (e.g., `"echarts"`, `"mermaid"`)
+
+### Example: Custom ECharts Code Block
+
+::: code-group
+
+```vue [Vue]
+<!-- CustomEchartCodeBlock.vue -->
+<script setup lang="ts">
+import { ref, onMounted, watch } from 'vue'
+import * as echarts from 'echarts'
+
+const props = defineProps<{
+  codeStr: string
+  lang?: string
+}>()
+
+const chartRef = ref<HTMLDivElement>()
+const error = ref('')
+const loading = ref(false)
+
+async function renderChart() {
+  if (!props.codeStr) return
+  
+  error.value = ''
+  loading.value = true
+
+  try {
+    const option = JSON.parse(props.codeStr)
+    if (!chartRef.value) return
+
+    const chart = echarts.getInstanceByDom(chartRef.value)
+    if (chart) {
+      chart.setOption(option)
+    } else {
+      const newChart = echarts.init(chartRef.value)
+      newChart.setOption(option)
+    }
+  } catch (e: any) {
+    error.value = e.message || 'Render failed'
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => renderChart())
+watch(() => props.codeStr, renderChart)
+</script>
+
+<template>
+  <div class="custom-echart-code-block">
+    <div class="echart-header">
+      <span class="language">ECHART</span>
+    </div>
+    <div class="echart-content">
+      <div v-if="loading" class="echart-loading">Loading...</div>
+      <div v-else-if="error" class="echart-error">{{ error }}</div>
+      <div ref="chartRef" class="echart-chart" style="width: 100%; height: 400px;"></div>
+    </div>
+  </div>
+</template>
+```
+
+```tsx [React]
+// CustomEchartCodeBlock.tsx
+import React, { useEffect, useRef, useState } from 'react'
+import * as echarts from 'echarts'
+
+export interface CustomEchartCodeBlockProps {
+  codeStr: string
+  lang?: string
+}
+
+export const CustomEchartCodeBlock: React.FC<CustomEchartCodeBlockProps> = ({ 
+  codeStr 
+}) => {
+  const chartRef = useRef<HTMLDivElement>(null)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!codeStr) return
+
+    setError('')
+    setLoading(true)
+
+    try {
+      const option = JSON.parse(codeStr)
+      if (!chartRef.current) {
+        setLoading(false)
+        return
+      }
+
+      const chart = echarts.getInstanceByDom(chartRef.current)
+      if (chart) {
+        chart.setOption(option)
+      } else {
+        const newChart = echarts.init(chartRef.current)
+        newChart.setOption(option)
+      }
+    } catch (e: any) {
+      setError(e.message || 'Render failed')
+    } finally {
+      setLoading(false)
+    }
+  }, [codeStr])
+
+  return (
+    <div className="custom-echart-code-block">
+      <div className="echart-header">
+        <span className="language">ECHART</span>
+      </div>
+      <div className="echart-content">
+        {loading ? (
+          <div className="echart-loading">Loading...</div>
+        ) : error ? (
+          <div className="echart-error">{error}</div>
+        ) : (
+          <div ref={chartRef} className="echart-chart" style={{ width: '100%', height: '400px' }}></div>
+        )}
+      </div>
+    </div>
+  )
+}
+```
+
+```svelte [Svelte]
+<!-- CustomEchartCodeBlock.svelte -->
+<script lang="ts">
+  import * as echarts from 'echarts'
+
+  interface Props {
+    codeStr: string
+    lang?: string
+  }
+
+  let { codeStr }: Props = $props()
+
+  let chartRef: HTMLDivElement | undefined = $state();
+  let error = $state('')
+  let loading = $state(false)
+
+  async function renderChart() {
+    if (!codeStr) return
+
+    error = ''
+    loading = true
+
+    try {
+      const option = JSON.parse(codeStr)
+      if (!chartRef) {
+        loading = false
+        return
+      }
+
+      const chart = echarts.getInstanceByDom(chartRef)
+      if (chart) {
+        chart.setOption(option)
+      } else {
+        const newChart = echarts.init(chartRef)
+        newChart.setOption(option)
+      }
+    } catch (e: any) {
+      error = e.message || 'Render failed'
+    } finally {
+      loading = false
+    }
+  }
+
+  $effect(() => {
+    renderChart()
+  })
+</script>
+
+<div class="custom-echart-code-block">
+  <div class="echart-header">
+    <span class="language">ECHART</span>
+  </div>
+  <div class="echart-content">
+    {#if loading}
+      <div class="echart-loading">Loading...</div>
+    {:else if error}
+      <div class="echart-error">{error}</div>
+    {:else}
+      <div bind:this={chartRef} class="echart-chart" style="width: 100%; height: 400px;"></div>
+    {/if}
+  </div>
+</div>
+```
+
+:::
+
+### Usage in Markdown
+
+```markdown
+```echarts
+{
+  "title": {
+    "text": "Example Chart"
+  },
+  "xAxis": {
+    "type": "category",
+    "data": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  },
+  "yAxis": {
+    "type": "value"
+  },
+  "series": [{
+    "data": [120, 200, 150, 80, 70, 110, 130],
+    "type": "bar"
+  }]
+}
+```
+```
+
 ## Accessing Context
 
 Custom components can access parent context:

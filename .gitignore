@@ -56,7 +56,7 @@ ehthumbs.db
 # Turbo
 .turbo/
 
-.claude
+.claude/
 
 **/*/.svelte-kit
 # local temp files
