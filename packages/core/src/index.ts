@@ -115,14 +115,3 @@ export type {
   HtmlContentType
 } from './extensions/html-extension'
 
-/**
- * BlockTransformer 动画样式
- * 
- * 使用方法：
- * ```js
- * import '@incremark/core/transformer/styles.css'
- * ```
- * 
- * 或者复制 packages/core/src/transformer/styles.css 到你的项目中自定义
- */
-
