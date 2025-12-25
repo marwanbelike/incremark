@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import 'katex/dist/katex.min.css'
 
 import { useLocale } from './hooks'
 import { IncremarkDemo } from './components'

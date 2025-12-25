@@ -4,6 +4,7 @@
   "streaming": "正在输出...",
   "renderOnce": "一次性渲染",
   "reset": "重置",
+  "customComponents": "使用自定义组件",
   "chars": "字符",
   "blocks": "块",
   "pending": "待定",

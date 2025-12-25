@@ -5,17 +5,13 @@
 
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
-  // @ts-ignore
-  import { math } from 'micromark-extension-math'
-  // @ts-ignore
-  import { mathFromMarkdown } from 'mdast-util-math'
-  import { 
-    useIncremark, 
-    useDevTools, 
-    Incremark, 
-    AutoScrollContainer, 
+  import {
+    useIncremark,
+    useDevTools,
+    Incremark,
+    AutoScrollContainer,
     ThemeProvider,
-    type DesignTokens 
+    type DesignTokens
   } from '@incremark/svelte'
   import { useBenchmark } from '../composables'
   import { 
@@ -67,10 +63,9 @@
     const initialHtmlEnabled = htmlEnabled
     return useIncremark({
       gfm: true,
+      math: true,
       containers: true,
       htmlTree: initialHtmlEnabled,
-      extensions: [math()],
-      mdastExtensions: [mathFromMarkdown()],
       typewriter: {
         enabled: false,
         charsPerTick: [1, Math.max(2, INITIAL_TYPEWRITER_SPEED)] as [number, number],

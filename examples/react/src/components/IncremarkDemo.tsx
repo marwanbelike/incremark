@@ -40,8 +40,9 @@ export function IncremarkDemo({ htmlEnabled, sampleMarkdown, t }: IncremarkDemoP
   }, [typewriterRandomStep, typewriterSpeed])
 
   // ============ Incremark（集成打字机） ============
-  const incremark = useIncremark({ 
+  const incremark = useIncremark({
     gfm: true,
+    math: true,
     containers: true,
     htmlTree: htmlEnabled,
     typewriter: {

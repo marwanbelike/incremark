@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useIncremark, useDevTools, Incremark, AutoScrollContainer, ThemeProvider, type DesignTokens } from '@incremark/vue'
-// @ts-ignore
-import { math } from 'micromark-extension-math'
-// @ts-ignore
-import { mathFromMarkdown } from 'mdast-util-math'
 
 import { useBenchmark } from '../composables'
 import { BenchmarkPanel, CustomInputPanel, CustomHeading, CustomWarningContainer, CustomInfoContainer, CustomTipContainer, CustomEchartCodeBlock } from './index'
@@ -25,10 +21,9 @@ const typewriterEffect = ref<'none' | 'fade-in' | 'typing'>('typing')
 // ============ 初始化 Incremark（集成打字机） ============
 const incremark = useIncremark({
   gfm: true,
+  math: true,
   htmlTree: props.htmlEnabled,
   containers: true, // 启用容器边界检测
-  extensions: [math()],
-  mdastExtensions: [mathFromMarkdown()],
   typewriter: {
     enabled: false,
     charsPerTick: [1, Math.max(2, typewriterSpeed.value)],

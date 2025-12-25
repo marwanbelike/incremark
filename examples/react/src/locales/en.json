@@ -4,6 +4,7 @@
   "streaming": "Streaming...",
   "renderOnce": "Render Once",
   "reset": "Reset",
+  "customComponents": "Use Custom Components",
   "chars": "chars",
   "blocks": "blocks",
   "pending": "pending",
