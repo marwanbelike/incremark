@@ -15,6 +15,22 @@ export interface BlockWithStableId extends ParsedBlock {
   isLastPending?: boolean // 是否是最后一个 pending 块
 }
 
+/**
+ * 代码块配置
+ */
+export interface CodeBlockConfig {
+  /** 是否从一开始就接管渲染，而不是等到 completed 状态 */
+  takeOver?: boolean
+}
+
+/**
+ * 代码块配置
+ */
+export interface CodeBlockConfig {
+  /** 是否从一开始就接管渲染，而不是等到 completed 状态 */
+  takeOver?: boolean
+}
+
 const props = withDefaults(
   defineProps<{
     /** 要渲染的块列表（来自 useIncremark 的 blocks） */
@@ -28,6 +44,8 @@ const props = withDefaults(
     customContainers?: Record<string, Component>
     /** 自定义代码块组件映射，key 为代码语言名称（如 'echart', 'mermaid'） */
     customCodeBlocks?: Record<string, Component>
+    /** 代码块配置映射，key 为代码语言名称 */
+    codeBlockConfigs?: Record<string, CodeBlockConfig>
     /** 待处理块的样式类名 */
     pendingClass?: string
     /** 已完成块的样式类名 */
@@ -43,6 +61,7 @@ const props = withDefaults(
     components: () => ({}),
     customContainers: () => ({}),
     customCodeBlocks: () => ({}),
+    codeBlockConfigs: () => ({}),
     pendingClass: 'incremark-pending',
     completedClass: 'incremark-completed',
     showBlockStatus: false
@@ -86,6 +105,7 @@ const actualIsDisplayComplete = computed(() => {
           :block-status="block.status"
           :custom-containers="customContainers"
           :custom-code-blocks="customCodeBlocks"
+          :code-block-configs="codeBlockConfigs"
           :components="components"
         />
       </div>

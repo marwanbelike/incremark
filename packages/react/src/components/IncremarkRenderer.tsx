@@ -17,7 +17,8 @@ export interface IncremarkRendererProps {
   node: RootContent | ContainerNode
   components?: Partial<Record<string, React.ComponentType<{ node: any }>>>
   customContainers?: Record<string, React.ComponentType<{ name: string; options?: Record<string, any>; children?: ReactNode }>>
-  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string }>>
+  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string; completed?: boolean; takeOver?: boolean }>>
+  codeBlockConfigs?: Record<string, { takeOver?: boolean }>
   blockStatus?: 'pending' | 'stable' | 'completed'
 }
 
@@ -71,6 +72,7 @@ export const IncremarkRenderer: React.FC<IncremarkRendererProps> = ({
   components = {},
   customContainers,
   customCodeBlocks,
+  codeBlockConfigs,
   blockStatus
 }) => {
   // footnoteDefinition 节点：不渲染（由 IncremarkFootnotes 组件统一处理）
@@ -97,12 +99,13 @@ export const IncremarkRenderer: React.FC<IncremarkRendererProps> = ({
     )
   }
 
-  // 代码节点：特殊处理，传递 customCodeBlocks 和 blockStatus
+  // 代码节点：特殊处理，传递 customCodeBlocks、codeBlockConfigs 和 blockStatus
   if (node.type === 'code') {
     return (
       <IncremarkCode
         node={node as Code}
         customCodeBlocks={customCodeBlocks}
+        codeBlockConfigs={codeBlockConfigs}
         blockStatus={blockStatus}
       />
     )

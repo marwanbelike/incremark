@@ -176,6 +176,13 @@
     echarts: CustomEchartCodeBlock,
   }
 
+  // ============ 代码块配置 ============
+  const codeBlockConfigs = {
+    echarts: {
+      takeOver: true, // 从一开始就接管渲染
+    }
+  }
+
   // ============ 主题系统 ============
   let themeMode = $state<'default' | 'dark' | 'custom'>('default')
 
@@ -333,6 +340,7 @@
           components={useCustomComponents ? customComponents : {}}
           {customContainers}
           {customCodeBlocks}
+          {codeBlockConfigs}
           showBlockStatus={true}
         />
       </AutoScrollContainer>

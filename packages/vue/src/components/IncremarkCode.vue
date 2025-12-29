@@ -3,6 +3,8 @@ import type { Code } from 'mdast'
 import type { Component } from 'vue'
 import { computed, ref, watch, shallowRef, onUnmounted } from 'vue'
 
+import type { CodeBlockConfig } from './Incremark.vue'
+
 const props = withDefaults(
   defineProps<{
     node: Code
@@ -16,6 +18,8 @@ const props = withDefaults(
     mermaidDelay?: number
     /** 自定义代码块组件映射，key 为代码语言名称 */
     customCodeBlocks?: Record<string, Component>
+    /** 代码块配置映射，key 为代码语言名称 */
+    codeBlockConfigs?: Record<string, CodeBlockConfig>
     /** 块状态，用于判断是否使用自定义组件 */
     blockStatus?: 'pending' | 'stable' | 'completed'
   }>(),
@@ -25,6 +29,7 @@ const props = withDefaults(
     disableHighlight: false,
     mermaidDelay: 500,
     customCodeBlocks: () => ({}),
+    codeBlockConfigs: () => ({}),
     blockStatus: 'completed'
   }
 )
@@ -53,11 +58,23 @@ const isMermaid = computed(() => language.value === 'mermaid')
 
 // 检查是否有自定义代码块组件
 const CustomCodeBlock = computed(() => {
-  // 如果代码块还在 pending 状态，不使用自定义组件
-  if (props.blockStatus === 'pending') {
+  const component = props.customCodeBlocks?.[language.value]
+  if (!component) return null
+
+  // 检查该语言的配置
+  const config = props.codeBlockConfigs?.[language.value]
+
+  // 如果配置了 takeOver 为 true，则从一开始就使用
+  if (config?.takeOver) {
+    return component
+  }
+
+  // 否则，默认行为：只在 completed 状态使用
+  if (props.blockStatus !== 'completed') {
     return null
   }
-  return props.customCodeBlocks?.[language.value] || null
+
+  return component
 })
 
 // 是否使用自定义组件
@@ -210,6 +227,7 @@ async function copyCode() {
     :is="CustomCodeBlock"
     :code-str="code"
     :lang="language"
+    :completed="blockStatus === 'completed'"
   />
 
   <!-- Mermaid 图表（如果没有自定义组件） -->

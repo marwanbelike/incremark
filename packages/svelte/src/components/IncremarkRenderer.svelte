@@ -25,13 +25,15 @@
     node: RootContent | ContainerNode
     customContainers?: Record<string, any>
     customCodeBlocks?: Record<string, any>
+    codeBlockConfigs?: Record<string, { takeOver?: boolean }>
     blockStatus?: 'pending' | 'stable' | 'completed'
   }
 
-  let { 
-    node, 
+  let {
+    node,
     customContainers,
     customCodeBlocks,
+    codeBlockConfigs,
     blockStatus
   }: Props = $props()
 
@@ -86,11 +88,12 @@
     node={node} 
     customContainers={customContainers}
   />
-<!-- 代码节点：特殊处理，传递 customCodeBlocks 和 blockStatus -->
+<!-- 代码节点：特殊处理，传递 customCodeBlocks、codeBlockConfigs 和 blockStatus -->
 {:else if node.type === 'code'}
   <IncremarkCode
     node={node}
     customCodeBlocks={customCodeBlocks}
+    codeBlockConfigs={codeBlockConfigs}
     blockStatus={blockStatus}
   />
 {:else}

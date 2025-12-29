@@ -111,6 +111,13 @@ const customCodeBlocks = {
   echarts: CustomEchartCodeBlock,
 }
 
+// ============ 代码块配置 ============
+const codeBlockConfigs = {
+  echarts: {
+    takeOver: true, // 从一开始就接管渲染
+  }
+}
+
 // ============ 主题系统 ============
 const themeMode = ref<'default' | 'dark' | 'custom'>('default')
 
@@ -247,6 +254,7 @@ defineExpose({
             :components="useCustomComponents ? customComponents : {}"
             :custom-containers="customContainers"
             :custom-code-blocks="customCodeBlocks"
+            :code-block-configs="codeBlockConfigs"
             :show-block-status="true"
           />
         </AutoScrollContainer>

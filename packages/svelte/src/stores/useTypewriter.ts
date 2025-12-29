@@ -33,7 +33,7 @@ export interface UseTypewriterOptions {
  */
 export interface UseTypewriterReturn {
   /** 用于渲染的 blocks（经过打字机处理或原始blocks） */
-  blocks: Readable<Array<ParsedBlock & { stableId: string }>>
+  blocks: Readable<Array<ParsedBlock & { stableId: string; isLastPending?: boolean }>>
   /** 打字机控制对象 */
   typewriter: TypewriterControls
   /** transformer 实例 */
@@ -127,16 +127,18 @@ export function useTypewriter(options: UseTypewriterOptions): UseTypewriterRetur
   const rawBlocks = derived(
     [completedBlocks, pendingBlocks],
     ([$completedBlocks, $pendingBlocks]) => {
-      const result: Array<ParsedBlock & { stableId: string }> = []
+      const result: Array<ParsedBlock & { stableId: string; isLastPending?: boolean }> = []
 
       for (const block of $completedBlocks) {
         result.push({ ...block, stableId: block.id })
       }
 
       for (let i = 0; i < $pendingBlocks.length; i++) {
+        const isLastPending = i === $pendingBlocks.length - 1
         result.push({
           ...$pendingBlocks[i],
-          stableId: `pending-${i}`
+          stableId: `pending-${i}`,
+          isLastPending
         })
       }
 

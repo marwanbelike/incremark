@@ -23,6 +23,8 @@
     mermaidDelay?: number
     /** 自定义代码块组件映射，key 为代码语言名称 */
     customCodeBlocks?: Record<string, any>
+    /** 代码块配置映射，key 为代码语言名称 */
+    codeBlockConfigs?: Record<string, { takeOver?: boolean }>
     /** 块状态，用于判断是否使用自定义组件 */
     blockStatus?: 'pending' | 'stable' | 'completed'
   }
@@ -34,6 +36,7 @@
     disableHighlight = false,
     mermaidDelay = 500,
     customCodeBlocks,
+    codeBlockConfigs,
     blockStatus = 'completed'
   }: Props = $props()
 
@@ -66,11 +69,23 @@
 
   // 检查是否有自定义代码块组件
   const CustomCodeBlock = $derived.by(() => {
-    // 如果代码块还在 pending 状态，不使用自定义组件
-    if (blockStatus === 'pending') {
+    const component = customCodeBlocks?.[language]
+    if (!component) return null
+
+    // 检查该语言的配置
+    const config = codeBlockConfigs?.[language]
+
+    // 如果配置了 takeOver 为 true，则从一开始就使用
+    if (config?.takeOver) {
+      return component
+    }
+
+    // 否则，默认行为：只在 completed 状态使用
+    if (blockStatus !== 'completed') {
       return null
     }
-    return customCodeBlocks?.[language] || null
+
+    return component
   })
 
   // 是否使用自定义组件
@@ -233,12 +248,8 @@
 
 <!-- 自定义代码块组件 -->
 {#if useCustomComponent && CustomCodeBlock}
-  <svelte:component 
-    this={CustomCodeBlock} 
-    codeStr={code} 
-    lang={language}
-  />
-<!-- Mermaid 图表 -->
+  {@const Component = CustomCodeBlock}
+  <Component codeStr={code} lang={language} completed={blockStatus === 'completed'} />
 {:else if isMermaid}
   <div class="incremark-mermaid">
     <div class="mermaid-header">

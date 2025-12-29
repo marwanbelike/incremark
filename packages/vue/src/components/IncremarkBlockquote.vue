@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Blockquote } from 'mdast'
-import IncremarkParagraph from './IncremarkParagraph.vue'
+import IncremarkRenderer from './IncremarkRenderer.vue'
 
 defineProps<{
   node: Blockquote
@@ -9,10 +9,7 @@ defineProps<{
 
 <template>
   <blockquote class="incremark-blockquote">
-    <template v-for="(child, index) in node.children" :key="index">
-      <IncremarkParagraph v-if="child.type === 'paragraph'" :node="child" />
-      <div v-else class="unknown-child">{{ child.type }}</div>
-    </template>
+    <IncremarkRenderer v-for="(child, index) in node.children" :key="index" :node="child" />
   </blockquote>
 </template>
 

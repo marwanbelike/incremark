@@ -14,6 +14,7 @@ import IncremarkHtmlElement from './IncremarkHtmlElement.vue'
 import IncremarkContainer from './IncremarkContainer.vue'
 import IncremarkDefault from './IncremarkDefault.vue'
 import type { ContainerNode } from './IncremarkContainer.vue'
+import type { CodeBlockConfig } from './Incremark.vue'
 
 type ExtendedRootContent = RootContent | ContainerNode
 
@@ -21,6 +22,7 @@ const props = defineProps<{
   node: ExtendedRootContent
   customContainers?: Record<string, Component>
   customCodeBlocks?: Record<string, Component>
+  codeBlockConfigs?: Record<string, CodeBlockConfig>
   blockStatus?: 'pending' | 'stable' | 'completed'
   components?: Partial<Record<string, Component>>
 }>()
@@ -78,11 +80,12 @@ function isHtmlNode(node: ExtendedRootContent): node is HTML {
     :node="node as ContainerNode"
     :custom-containers="customContainers"
   />
-  <!-- 代码节点：特殊处理，传递 customCodeBlocks 和 blockStatus -->
+  <!-- 代码节点：特殊处理，传递 customCodeBlocks、codeBlockConfigs 和 blockStatus -->
   <IncremarkCode
     v-else-if="(node as RootContent).type === 'code'"
     :node="node as Code"
     :custom-code-blocks="customCodeBlocks"
+    :code-block-configs="codeBlockConfigs"
     :block-status="blockStatus"
   />
   <!-- 其他节点：使用对应组件 -->

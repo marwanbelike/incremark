@@ -12,9 +12,11 @@ export interface IncremarkCodeProps {
   /** Mermaid 渲染延迟（毫秒），用于流式输入时防抖 */
   mermaidDelay?: number
   /** 自定义代码块组件映射，key 为代码语言名称 */
-  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string }>>
+  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string; completed?: boolean; takeOver?: boolean }>>
   /** 块状态，用于判断是否使用自定义组件 */
   blockStatus?: 'pending' | 'stable' | 'completed'
+  /** 代码块配置映射，key 为代码语言名称 */
+  codeBlockConfigs?: Record<string, { takeOver?: boolean }>
 }
 
 export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
@@ -24,7 +26,8 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
   disableHighlight = false,
   mermaidDelay = 500,
   customCodeBlocks,
-  blockStatus = 'completed'
+  blockStatus = 'completed',
+  codeBlockConfigs
 }) => {
   const [copied, setCopied] = useState(false)
   const [highlightedHtml, setHighlightedHtml] = useState('')
@@ -45,12 +48,24 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
 
   // 检查是否有自定义代码块组件
   const CustomCodeBlock = React.useMemo(() => {
-    // 如果代码块还在 pending 状态，不使用自定义组件
-    if (blockStatus === 'pending') {
+    const component = customCodeBlocks?.[language]
+    if (!component) return null
+
+    // 检查该语言的配置
+    const config = codeBlockConfigs?.[language]
+
+    // 如果配置了 takeOver 为 true，则从一开始就使用
+    if (config?.takeOver) {
+      return component
+    }
+
+    // 否则，默认行为：只在 completed 状态使用
+    if (blockStatus !== 'completed') {
       return null
     }
-    return customCodeBlocks?.[language] || null
-  }, [customCodeBlocks, language, blockStatus])
+
+    return component
+  }, [customCodeBlocks, language, blockStatus, codeBlockConfigs])
 
   // 是否使用自定义组件
   const useCustomComponent = !!CustomCodeBlock
@@ -180,7 +195,15 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
   
   // 自定义代码块组件
   if (useCustomComponent && CustomCodeBlock) {
-    return <CustomCodeBlock codeStr={code} lang={language} />
+    const config = codeBlockConfigs?.[language]
+    return (
+      <CustomCodeBlock
+        codeStr={code}
+        lang={language}
+        completed={blockStatus === 'completed'}
+        takeOver={config?.takeOver}
+      />
+    )
   }
   
   if (isMermaid) {

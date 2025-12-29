@@ -10,6 +10,14 @@ interface BlockWithStableId extends ParsedBlock {
   isLastPending?: boolean // 是否是最后一个 pending 块
 }
 
+/**
+ * 代码块配置
+ */
+export interface CodeBlockConfig {
+  /** 是否从一开始就接管渲染，而不是等到 completed 状态 */
+  takeOver?: boolean
+}
+
 export interface IncremarkProps {
   /** 要渲染的块列表 */
   blocks?: BlockWithStableId[]
@@ -21,7 +29,9 @@ export interface IncremarkProps {
   /** 自定义容器组件映射，key 为容器名称（如 'warning', 'info'） */
   customContainers?: Record<string, React.ComponentType<{ name: string; options?: Record<string, any>; children?: React.ReactNode }>>
   /** 自定义代码块组件映射，key 为代码语言名称（如 'echart', 'mermaid'） */
-  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string }>>
+  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string | undefined; completed?: boolean | undefined; takeOver?: boolean | undefined }>>
+  /** 代码块配置映射，key 为代码语言名称 */
+  codeBlockConfigs?: Record<string, CodeBlockConfig>
   /** 是否显示块状态（待处理块边框） */
   showBlockStatus?: boolean
   /** 自定义类名 */
@@ -98,7 +108,8 @@ interface IncremarkInternalProps {
   blocks: BlockWithStableId[]
   components?: Partial<Record<string, React.ComponentType<{ node: any }>>>
   customContainers?: Record<string, React.ComponentType<{ name: string; options?: Record<string, any>; children?: React.ReactNode }>>
-  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string }>>
+  customCodeBlocks?: Record<string, React.ComponentType<{ codeStr: string; lang?: string; completed?: boolean; takeOver?: boolean }>>
+  codeBlockConfigs?: Record<string, { takeOver?: boolean }>
   showBlockStatus: boolean
   className: string
   isDisplayComplete: boolean
@@ -109,6 +120,7 @@ const IncremarkInternal: React.FC<IncremarkInternalProps> = ({
   components,
   customContainers,
   customCodeBlocks,
+  codeBlockConfigs,
   showBlockStatus,
   className,
   isDisplayComplete
@@ -132,11 +144,12 @@ const IncremarkInternal: React.FC<IncremarkInternalProps> = ({
 
         return (
           <div key={block.stableId} className={classes}>
-            <IncremarkRenderer 
-              node={block.node} 
+            <IncremarkRenderer
+              node={block.node}
               components={components}
               customContainers={customContainers}
               customCodeBlocks={customCodeBlocks}
+              codeBlockConfigs={codeBlockConfigs}
               blockStatus={block.status}
             />
           </div>

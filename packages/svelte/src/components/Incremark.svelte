@@ -6,9 +6,9 @@
 <script lang="ts">
   import type { Component } from 'svelte'
   import type { Readable } from 'svelte/store'
-  import type { RootContent } from '@incremark/core'
+  import type { RootContent, ParsedBlock } from '@incremark/core'
   import type { HTML } from 'mdast'
-  
+
   import { getDefinitionsContext } from '../context/definitionsContext'
   import type { UseIncremarkReturn } from '../stores/useIncremark'
   import type { ComponentMap, BlockWithStableId } from './types'
@@ -39,6 +39,8 @@
     customContainers?: Record<string, Component<any>>
     /** 自定义代码块组件映射，key 为代码语言名称（如 'echart', 'mermaid'） */
     customCodeBlocks?: Record<string, Component<any>>
+    /** 代码块配置映射，key 为代码语言名称 */
+    codeBlockConfigs?: Record<string, { takeOver?: boolean }>
     /** 待处理块的样式类名 */
     pendingClass?: string
     /** 已完成块的样式类名 */
@@ -55,6 +57,7 @@
     components = {},
     customContainers = {},
     customCodeBlocks = {},
+    codeBlockConfigs = {},
     pendingClass = 'incremark-pending',
     completedClass = 'incremark-completed',
     showBlockStatus = false,
@@ -64,59 +67,49 @@
   const context = getDefinitionsContext();
   const footnoteReferenceOrder = $derived(context?.footnoteReferenceOrder ?? []);
 
-  // 提取 incremark 的 stores（如果存在）
-  const incremarkBlocks = $derived.by(() => incremark?.blocks)
-  const incremarkIsDisplayComplete = $derived.by(() => incremark?.isDisplayComplete)
-
-  // 计算 actualBlocks（当不使用 incremark 时）
-  const actualBlocks = $derived.by(() => {
-    if (incremark) {
-      return []
-    }
-    return Array.isArray(blocks) ? blocks : []
-  })
-
-  // 计算 actualIsDisplayComplete（当不使用 incremark 时）
-  const actualIsDisplayComplete = $derived.by(() => {
-    if (incremark) {
-      return false
-    }
-    return isDisplayComplete
-  })
+  // 当使用 incremark 时，从 incremark 对象中提取 blocks 和 isDisplayComplete
+  const incremarkBlocks = $derived(
+    incremark ? (incremark as any).blocks : []
+  );
+  const incremarkIsDisplayComplete = $derived(
+    incremark ? (incremark as any).isDisplayComplete : false
+  );
 </script>
 
 <div class="incremark">
   <!-- 主要内容块 -->
-  {#if incremark && incremarkBlocks}
+  {#if incremark}
     <!-- 使用 incremark 的 blocks store -->
-    {#each ($incremarkBlocks || []) as block (block.stableId)}
-      {#if block.node.type !== 'definition' && block.node.type !== 'footnoteDefinition'}
+    {#each $incremarkBlocks as block (block.stableId)}
+      {#if (block as ParsedBlock).node.type !== 'definition' && (block as ParsedBlock).node.type !== 'footnoteDefinition'}
         <div
-          class="incremark-block {block.status === 'completed' ? completedClass : pendingClass} {showBlockStatus ? 'incremark-show-status' : ''} {(block as BlockWithStableId).isLastPending ? 'incremark-last-pending' : ''}"
+          class="incremark-block {(block as ParsedBlock).status === 'completed' ? completedClass : pendingClass} {showBlockStatus ? 'incremark-show-status' : ''} {(block as BlockWithStableId).isLastPending ? 'incremark-last-pending' : ''}"
         >
           <!-- 使用 IncremarkRenderer，传递 customContainers 和 customCodeBlocks -->
-          <IncremarkRenderer 
-            node={block.node} 
+          <IncremarkRenderer
+            node={(block as ParsedBlock).node}
             customContainers={customContainers}
             customCodeBlocks={customCodeBlocks}
-            blockStatus={block.status}
+            codeBlockConfigs={codeBlockConfigs}
+            blockStatus={(block as ParsedBlock).status}
           />
         </div>
       {/if}
     {/each}
   {:else}
     <!-- 使用传入的 blocks 数组 -->
-    {#each actualBlocks as block (block.stableId)}
-      {#if block.node.type !== 'definition' && block.node.type !== 'footnoteDefinition'}
+    {#each (Array.isArray(blocks) ? blocks : []) as block (block.stableId)}
+      {#if (block as ParsedBlock).node.type !== 'definition' && (block as ParsedBlock).node.type !== 'footnoteDefinition'}
         <div
-          class="incremark-block {block.status === 'completed' ? completedClass : pendingClass} {showBlockStatus ? 'incremark-show-status' : ''} {block.isLastPending ? 'incremark-last-pending' : ''}"
+          class="incremark-block {(block as ParsedBlock).status === 'completed' ? completedClass : pendingClass} {showBlockStatus ? 'incremark-show-status' : ''} {block.isLastPending ? 'incremark-last-pending' : ''}"
         >
           <!-- 使用 IncremarkRenderer，传递 customContainers 和 customCodeBlocks -->
           <IncremarkRenderer
-            node={block.node}
+            node={(block as ParsedBlock).node}
             customContainers={customContainers}
             customCodeBlocks={customCodeBlocks}
-            blockStatus={block.status}
+            codeBlockConfigs={codeBlockConfigs}
+            blockStatus={(block as ParsedBlock).status}
           />
         </div>
       {/if}
@@ -124,12 +117,12 @@
   {/if}
 
   <!-- 脚注列表（仅在内容完全显示后显示） -->
-  {#if incremark && incremarkIsDisplayComplete && footnoteReferenceOrder && $incremarkIsDisplayComplete}
+  {#if incremark && $incremarkIsDisplayComplete && $footnoteReferenceOrder}
     {@const footnoteOrder = $footnoteReferenceOrder ?? []}
     {#if footnoteOrder.length > 0}
       <IncremarkFootnotes />
     {/if}
-  {:else if !incremark && actualIsDisplayComplete && footnoteReferenceOrder}
+  {:else if !incremark && isDisplayComplete && $footnoteReferenceOrder}
     {@const footnoteOrder = $footnoteReferenceOrder ?? []}
     {#if footnoteOrder.length > 0}
       <IncremarkFootnotes />

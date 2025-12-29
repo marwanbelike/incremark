@@ -1,43 +1,40 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch, nextTick, computed } from 'vue'
 import * as echarts from 'echarts'
 
 const props = defineProps<{
   codeStr: string
   lang?: string
+  completed: boolean
+  takeOver?: boolean
 }>()
 
 const chartRef = ref<HTMLDivElement>()
 const error = ref('')
 const loading = ref(false)
 
+// 是否应该显示图表
+const shouldShowChart = computed(() => {
+  return props.takeOver === true || props.completed
+})
+
 async function renderChart() {
   if (!props.codeStr) return
-  
+
   error.value = ''
   loading.value = true
 
-  try {    
-    // 解析代码字符串（假设是 JSON 格式的配置）
-    let option: any
-    try {
-      option = JSON.parse(props.codeStr)
-      console.log(option)
-    } catch (e) {
-      // 如果不是 JSON，尝试作为 JavaScript 代码执行（仅示例，生产环境需要更安全的处理）
-      error.value = 'ECharts 配置必须是有效的 JSON 格式'
-      return
-    }
+  try {
+    const option = JSON.parse(props.codeStr)
+    console.log(option)
 
     if (!chartRef.value) return
 
-    // 创建或更新图表
     const chart = echarts.getInstanceByDom(chartRef.value)
     if (chart) {
       chart.setOption(option)
     } else {
-      const newChart = echarts.init(chartRef.value)
-      newChart.setOption(option)
+      echarts.init(chartRef.value).setOption(option)
     }
   } catch (e: any) {
     error.value = e.message || '渲染失败'
@@ -46,12 +43,17 @@ async function renderChart() {
   }
 }
 
-onMounted(() => {
-  console.log('props.codeStr', props.codeStr)
-  renderChart()
+// 监听 completed 变化
+watch(() => props.completed, (newCompleted) => {
+  console.log('completed 变化:', newCompleted, 'takeOver:', props.takeOver)
+  
+  // 如果应该显示图表，等待 DOM 更新后渲染
+  if (props.takeOver === true || newCompleted) {
+    nextTick(() => {
+      renderChart()
+    })
+  }
 })
-
-watch(() => props.codeStr, renderChart)
 </script>
 
 <template>
@@ -60,9 +62,17 @@ watch(() => props.codeStr, renderChart)
       <span class="language">ECHART</span>
     </div>
     <div class="echart-content">
-      <div v-if="loading" class="echart-loading">加载中...</div>
+      <!-- loading 状态 -->
+      <div v-if="!shouldShowChart" class="echart-loading">解析中...</div>
+      <!-- 错误 -->
       <div v-else-if="error" class="echart-error">{{ error }}</div>
-      <div ref="chartRef" class="echart-chart" style="width: 100%; height: 400px;"></div>
+      <!-- 图表（无 v-if，始终存在） -->
+      <div 
+        ref="chartRef" 
+        class="echart-chart" 
+        style="width: 100%; height: 400px;"
+        :style="{ display: shouldShowChart ? 'block' : 'none' }"
+      />
     </div>
   </div>
 </template>

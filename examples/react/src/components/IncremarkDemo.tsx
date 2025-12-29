@@ -251,6 +251,11 @@ export function IncremarkDemo({ htmlEnabled, sampleMarkdown, t }: IncremarkDemoP
               customCodeBlocks={{
                 echarts: CustomEchartCodeBlock,
               }}
+              codeBlockConfigs={{
+                echarts: {
+                  takeOver: true, // 从一开始就接管渲染
+                }
+              }}
               showBlockStatus={true}
             />
           </AutoScrollContainer>

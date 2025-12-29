@@ -81,7 +81,7 @@ export interface UseIncremarkReturn {
   /** 当前完整的 AST */
   ast: Readable<Root>
   /** 用于渲染的 blocks（根据打字机设置自动处理） */
-  blocks: Readable<Array<ParsedBlock & { stableId: string }>>
+  blocks: Readable<Array<ParsedBlock & { stableId: string; isLastPending?: boolean }>>
   /** 是否正在加载 */
   isLoading: Writable<boolean>
   /** 是否已完成（finalize） */
