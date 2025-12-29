@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RootContent, HTML, Code } from 'mdast'
 import type { Component } from 'vue'
+import { computed } from 'vue'
 import IncremarkHeading from './IncremarkHeading.vue'
 import IncremarkParagraph from './IncremarkParagraph.vue'
 import IncremarkCode from './IncremarkCode.vue'
@@ -21,9 +22,11 @@ const props = defineProps<{
   customContainers?: Record<string, Component>
   customCodeBlocks?: Record<string, Component>
   blockStatus?: 'pending' | 'stable' | 'completed'
+  components?: Partial<Record<string, Component>>
 }>()
 
-const componentMap: Record<string, Component> = {
+// 默认组件映射
+const defaultComponentMap: Record<string, Component> = {
   heading: IncremarkHeading,
   paragraph: IncremarkParagraph,
   code: IncremarkCode,
@@ -39,8 +42,14 @@ const componentMap: Record<string, Component> = {
   textDirective: IncremarkContainer,
 }
 
+// 合并用户自定义组件
+const componentMap = computed(() => ({
+  ...defaultComponentMap,
+  ...props.components
+}))
+
 function getComponent(type: string): Component {
-  return componentMap[type] || IncremarkDefault
+  return componentMap.value[type] || IncremarkDefault
 }
 
 /**

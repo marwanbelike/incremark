@@ -141,10 +141,10 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
     ]
   }))
 
-  function append(chunk: string): IncrementalUpdate {
-    isLoading.value = true
-    const update = parser.append(chunk)
-
+  /**
+   * 处理解析器更新结果（统一 append 和 finalize 的更新逻辑）
+   */
+  function handleUpdate(update: IncrementalUpdate, isFinalize: boolean = false): void {
     markdown.value = parser.getBuffer()
 
     if (update.completed.length > 0) {
@@ -155,32 +155,27 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
     }
     pendingBlocks.value = update.pending.map((b) => markRaw(b))
 
+    if (isFinalize) {
+      isLoading.value = false
+      isFinalized.value = true
+    } else {
+      isLoading.value = true
+    }
+
     // 更新脚注引用顺序
     footnoteReferenceOrder.value = update.footnoteReferenceOrder
     setFootnoteReferenceOrder(update.footnoteReferenceOrder)
+  }
 
+  function append(chunk: string): IncrementalUpdate {
+    const update = parser.append(chunk)
+    handleUpdate(update, false)
     return update
   }
 
   function finalize(): IncrementalUpdate {
     const update = parser.finalize()
-
-    markdown.value = parser.getBuffer()
-
-    if (update.completed.length > 0) {
-      completedBlocks.value = [
-        ...completedBlocks.value,
-        ...update.completed.map((b) => markRaw(b))
-      ]
-    }
-    pendingBlocks.value = []
-    isLoading.value = false
-    isFinalized.value = true
-
-    // 更新脚注引用顺序
-    footnoteReferenceOrder.value = update.footnoteReferenceOrder
-    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
-
+    handleUpdate(update, true)
     return update
   }
 

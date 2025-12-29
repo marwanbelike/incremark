@@ -168,6 +168,32 @@ export function useIncremark(options: UseIncremarkOptions = {}): UseIncremarkRet
   const isFinalized = writable(false)
   const footnoteReferenceOrder = writable<string[]>([])
 
+  /**
+   * 处理解析器更新结果（统一 append 和 finalize 的更新逻辑）
+   */
+  function handleUpdate(update: IncrementalUpdate, isFinalize: boolean): void {
+    markdown.set(parser.getBuffer())
+
+    if (update.completed.length > 0) {
+      completedBlocks.update((blocks) => [
+        ...blocks,
+        ...update.completed
+      ])
+    }
+    pendingBlocks.set(update.pending)
+
+    if (isFinalize) {
+      isLoading.set(false)
+      isFinalized.set(true)
+    } else {
+      isLoading.set(true)
+    }
+
+    // 更新脚注引用顺序
+    footnoteReferenceOrder.set(update.footnoteReferenceOrder)
+    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
+  }
+
   // 使用 useTypewriter store 管理打字机效果
   const { blocks, typewriter, transformer, isAnimationComplete } = useTypewriter({
     typewriter: options.typewriter,
@@ -209,23 +235,8 @@ export function useIncremark(options: UseIncremarkOptions = {}): UseIncremarkRet
    * @returns 增量更新结果
    */
   function append(chunk: string): IncrementalUpdate {
-    isLoading.set(true)
     const update = parser.append(chunk)
-
-    markdown.set(parser.getBuffer())
-
-    if (update.completed.length > 0) {
-      completedBlocks.update((blocks) => [
-        ...blocks,
-        ...update.completed
-      ])
-    }
-    pendingBlocks.set(update.pending)
-
-    // 更新脚注引用顺序
-    footnoteReferenceOrder.set(update.footnoteReferenceOrder)
-    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
-
+    handleUpdate(update, false)
     return update
   }
 
@@ -236,23 +247,7 @@ export function useIncremark(options: UseIncremarkOptions = {}): UseIncremarkRet
    */
   function finalize(): IncrementalUpdate {
     const update = parser.finalize()
-
-    markdown.set(parser.getBuffer())
-
-    if (update.completed.length > 0) {
-      completedBlocks.update((blocks) => [
-        ...blocks,
-        ...update.completed
-      ])
-    }
-    pendingBlocks.set([])
-    isLoading.set(false)
-    isFinalized.set(true)
-
-    // 更新脚注引用顺序
-    footnoteReferenceOrder.set(update.footnoteReferenceOrder)
-    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
-
+    handleUpdate(update, true)
     return update
   }
 

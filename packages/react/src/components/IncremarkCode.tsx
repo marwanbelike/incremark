@@ -5,6 +5,8 @@ export interface IncremarkCodeProps {
   node: Code
   /** Shiki 主题，默认 github-dark */
   theme?: string
+  /** 默认回退主题（当指定主题加载失败时使用），默认 github-dark */
+  fallbackTheme?: string
   /** 是否禁用代码高亮 */
   disableHighlight?: boolean
   /** Mermaid 渲染延迟（毫秒），用于流式输入时防抖 */
@@ -18,6 +20,7 @@ export interface IncremarkCodeProps {
 export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
   node,
   theme = 'github-dark',
+  fallbackTheme = 'github-dark',
   disableHighlight = false,
   mermaidDelay = 500,
   customCodeBlocks,
@@ -109,14 +112,14 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
       scheduleRenderMermaid()
       return
     }
-    
+
     if (!code || disableHighlight) {
       setHighlightedHtml('')
       return
     }
-    
+
     setIsHighlighting(true)
-    
+
     try {
       if (!highlighterRef.current) {
         const { createHighlighter } = await import('shiki')
@@ -126,19 +129,21 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
         })
         loadedThemesRef.current.add(theme)
       }
-      
+
       const highlighter = highlighterRef.current
       const lang = language
-      
+
+      // 按需加载语言
       if (!loadedLanguagesRef.current.has(lang) && lang !== 'text') {
         try {
           await highlighter.loadLanguage(lang)
           loadedLanguagesRef.current.add(lang)
         } catch {
-          // 语言不支持
+          // 语言不支持，标记但不阻止
         }
       }
-      
+
+      // 按需加载主题
       if (!loadedThemesRef.current.has(theme)) {
         try {
           await highlighter.loadTheme(theme)
@@ -147,18 +152,19 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
           // 主题不支持
         }
       }
-      
+
       const html = highlighter.codeToHtml(code, {
         lang: loadedLanguagesRef.current.has(lang) ? lang : 'text',
-        theme: loadedThemesRef.current.has(theme) ? theme : 'github-dark'
+        theme: loadedThemesRef.current.has(theme) ? theme : fallbackTheme
       })
       setHighlightedHtml(html)
     } catch {
+      // Shiki 不可用或加载失败
       setHighlightedHtml('')
     } finally {
       setIsHighlighting(false)
     }
-  }, [code, language, theme, disableHighlight, isMermaid, scheduleRenderMermaid])
+  }, [code, language, theme, fallbackTheme, disableHighlight, isMermaid, scheduleRenderMermaid])
   
   useEffect(() => {
     highlight()

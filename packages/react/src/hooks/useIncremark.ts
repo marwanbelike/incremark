@@ -145,6 +145,31 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
   const [isLoading, setIsLoading] = useState(false)
   const [isFinalized, setIsFinalized] = useState(false)
 
+  /**
+   * 处理解析器更新结果（统一 append 和 finalize 的更新逻辑）
+   */
+  const handleUpdate = useCallback(
+    (update: IncrementalUpdate, isFinalize: boolean): void => {
+      setMarkdown(parser.getBuffer())
+
+      if (update.completed.length > 0) {
+        setCompletedBlocks((prev) => [...prev, ...update.completed])
+      }
+      setPendingBlocks(update.pending)
+
+      if (isFinalize) {
+        setIsLoading(false)
+        setIsFinalized(true)
+      } else {
+        setIsLoading(true)
+      }
+
+      // 更新脚注引用顺序
+      setFootnoteReferenceOrder(update.footnoteReferenceOrder)
+    },
+    [parser, setFootnoteReferenceOrder]
+  )
+
   // 使用 useTypewriter hook 管理打字机效果
   const { blocks, typewriter, transformer, isAnimationComplete } = useTypewriter({
     typewriter: options.typewriter,
@@ -175,37 +200,18 @@ export function useIncremark(options: UseIncremarkOptions = {}) {
 
   const append = useCallback(
     (chunk: string): IncrementalUpdate => {
-      setIsLoading(true)
       const update = parser.append(chunk)
-
-      setMarkdown(parser.getBuffer())
-
-      if (update.completed.length > 0) {
-        setCompletedBlocks((prev) => [...prev, ...update.completed])
-      }
-      setPendingBlocks(update.pending)
-      setFootnoteReferenceOrder(update.footnoteReferenceOrder)
-
+      handleUpdate(update, false)
       return update
     },
-    [parser, setFootnoteReferenceOrder]
+    [parser, handleUpdate]
   )
 
   const finalize = useCallback((): IncrementalUpdate => {
     const update = parser.finalize()
-
-    setMarkdown(parser.getBuffer())
-
-    if (update.completed.length > 0) {
-      setCompletedBlocks((prev) => [...prev, ...update.completed])
-    }
-    setPendingBlocks([])
-    setIsLoading(false)
-    setIsFinalized(true)
-    setFootnoteReferenceOrder(update.footnoteReferenceOrder)
-
+    handleUpdate(update, true)
     return update
-  }, [parser, setFootnoteReferenceOrder])
+  }, [parser, handleUpdate])
 
   const abort = useCallback((): IncrementalUpdate => {
     return finalize()

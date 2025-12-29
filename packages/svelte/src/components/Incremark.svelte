@@ -12,18 +12,8 @@
   import { getDefinitionsContext } from '../context/definitionsContext'
   import type { UseIncremarkReturn } from '../stores/useIncremark'
   import type { ComponentMap, BlockWithStableId } from './types'
-  
-  // 导入默认组件
-  import IncremarkParagraph from './IncremarkParagraph.svelte'
-  import IncremarkHeading from './IncremarkHeading.svelte'
-  import IncremarkCode from './IncremarkCode.svelte'
-  import IncremarkList from './IncremarkList.svelte'
-  import IncremarkTable from './IncremarkTable.svelte'
-  import IncremarkBlockquote from './IncremarkBlockquote.svelte'
-  import IncremarkThematicBreak from './IncremarkThematicBreak.svelte'
-  import IncremarkMath from './IncremarkMath.svelte'
-  import IncremarkHtmlElement from './IncremarkHtmlElement.svelte'
-  import IncremarkDefault from './IncremarkDefault.svelte'
+
+  // 导入组件
   import IncremarkFootnotes from './IncremarkFootnotes.svelte'
   import IncremarkRenderer from './IncremarkRenderer.svelte'
 
@@ -74,48 +64,25 @@
   const context = getDefinitionsContext();
   const footnoteReferenceOrder = $derived(context?.footnoteReferenceOrder ?? []);
 
-  // 计算 isDisplayComplete（当不使用 incremark 时）
-  const actualIsDisplayComplete = $derived.by(() => {
+  // 提取 incremark 的 stores（如果存在）
+  const incremarkBlocks = $derived.by(() => incremark?.blocks)
+  const incremarkIsDisplayComplete = $derived.by(() => incremark?.isDisplayComplete)
+
+  // 计算 actualBlocks（当不使用 incremark 时）
+  const actualBlocks = $derived.by(() => {
     if (incremark) {
-      // 如果提供了 incremark，在模板中直接使用 $incremark.isDisplayComplete
-      return false
-    }
-    // 否则使用用户传入的 isDisplayComplete
-    return isDisplayComplete
-  })
-
-  // 默认组件映射
-  const defaultComponents: ComponentMap = {
-    paragraph: IncremarkParagraph,
-    heading: IncremarkHeading,
-    code: IncremarkCode,
-    list: IncremarkList,
-    table: IncremarkTable,
-    blockquote: IncremarkBlockquote,
-    thematicBreak: IncremarkThematicBreak,
-    math: IncremarkMath,
-    inlineMath: IncremarkMath,
-    htmlElement: IncremarkHtmlElement
-  }
-
-  // 合并用户组件和默认组件
-  const mergedComponents = $derived({
-    ...defaultComponents,
-    ...components
-  })
-
-  // 处理 blocks（可能是 store 或数组）
-  const blocksArray = $derived.by(() => {
-    if (incremark) {
-      // 如果提供了 incremark，在模板中直接使用 incremark.blocks（store）
       return []
     }
     return Array.isArray(blocks) ? blocks : []
   })
 
-  // 提取 incremark 的 stores（如果存在）
-  const incremarkBlocks = $derived.by(() => incremark?.blocks)
-  const incremarkIsDisplayComplete = $derived.by(() => incremark?.isDisplayComplete)
+  // 计算 actualIsDisplayComplete（当不使用 incremark 时）
+  const actualIsDisplayComplete = $derived.by(() => {
+    if (incremark) {
+      return false
+    }
+    return isDisplayComplete
+  })
 </script>
 
 <div class="incremark">
@@ -139,14 +106,14 @@
     {/each}
   {:else}
     <!-- 使用传入的 blocks 数组 -->
-    {#each blocksArray as block (block.stableId)}
+    {#each actualBlocks as block (block.stableId)}
       {#if block.node.type !== 'definition' && block.node.type !== 'footnoteDefinition'}
         <div
           class="incremark-block {block.status === 'completed' ? completedClass : pendingClass} {showBlockStatus ? 'incremark-show-status' : ''} {block.isLastPending ? 'incremark-last-pending' : ''}"
         >
           <!-- 使用 IncremarkRenderer，传递 customContainers 和 customCodeBlocks -->
-          <IncremarkRenderer 
-            node={block.node} 
+          <IncremarkRenderer
+            node={block.node}
             customContainers={customContainers}
             customCodeBlocks={customCodeBlocks}
             blockStatus={block.status}

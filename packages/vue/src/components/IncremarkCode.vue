@@ -8,6 +8,8 @@ const props = withDefaults(
     node: Code
     /** Shiki 主题，默认 github-dark */
     theme?: string
+    /** 默认回退主题（当指定主题加载失败时使用），默认 github-dark */
+    fallbackTheme?: string
     /** 是否禁用代码高亮 */
     disableHighlight?: boolean
     /** Mermaid 渲染延迟（毫秒），用于流式输入时防抖 */
@@ -19,6 +21,7 @@ const props = withDefaults(
   }>(),
   {
     theme: 'github-dark',
+    fallbackTheme: 'github-dark',
     disableHighlight: false,
     mermaidDelay: 500,
     customCodeBlocks: () => ({}),
@@ -172,7 +175,7 @@ async function highlight() {
 
     const html = highlighter.codeToHtml(code.value, {
       lang: loadedLanguages.has(lang) ? lang : 'text',
-      theme: loadedThemes.has(props.theme) ? props.theme : 'github-dark'
+      theme: loadedThemes.has(props.theme) ? props.theme : props.fallbackTheme
     })
     highlightedHtml.value = html
   } catch (e) {

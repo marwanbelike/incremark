@@ -15,6 +15,8 @@
     node: Code
     /** Shiki 主题，默认 github-dark */
     theme?: string
+    /** 默认回退主题（当指定主题加载失败时使用），默认 github-dark */
+    fallbackTheme?: string
     /** 是否禁用代码高亮 */
     disableHighlight?: boolean
     /** Mermaid 渲染延迟（毫秒），用于流式输入时防抖 */
@@ -28,6 +30,7 @@
   let {
     node,
     theme = 'github-dark',
+    fallbackTheme = 'github-dark',
     disableHighlight = false,
     mermaidDelay = 500,
     customCodeBlocks,
@@ -188,7 +191,7 @@
 
       const html = highlighter.codeToHtml(code, {
         lang: loadedLanguages.has(lang) ? lang : 'text',
-        theme: loadedThemes.has(theme) ? theme : 'github-dark'
+        theme: loadedThemes.has(theme) ? theme : fallbackTheme
       })
       highlightedHtml = html
     } catch (e) {

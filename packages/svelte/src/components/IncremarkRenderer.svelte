@@ -7,7 +7,6 @@
   import type { RootContent, HTML } from 'mdast'
   import IncremarkHeading from './IncremarkHeading.svelte'
   import IncremarkParagraph from './IncremarkParagraph.svelte'
-  import IncremarkCode from './IncremarkCode.svelte'
   import IncremarkList from './IncremarkList.svelte'
   import IncremarkTable from './IncremarkTable.svelte'
   import IncremarkBlockquote from './IncremarkBlockquote.svelte'
@@ -15,6 +14,7 @@
   import IncremarkMath from './IncremarkMath.svelte'
   import IncremarkHtmlElement from './IncremarkHtmlElement.svelte'
   import IncremarkDefault from './IncremarkDefault.svelte'
+  import IncremarkCode from './IncremarkCode.svelte'
   import IncremarkContainer, { type ContainerNode } from './IncremarkContainer.svelte'
 
   /**
@@ -36,12 +36,11 @@
   }: Props = $props()
 
   /**
-   * 组件映射
+   * 默认组件映射
    */
-  const componentMap: Record<string, any> = {
+  const defaultComponentMap: Record<string, any> = {
     heading: IncremarkHeading,
     paragraph: IncremarkParagraph,
-    code: IncremarkCode,
     list: IncremarkList,
     table: IncremarkTable,
     blockquote: IncremarkBlockquote,
@@ -49,13 +48,16 @@
     math: IncremarkMath,
     inlineMath: IncremarkMath,
     htmlElement: IncremarkHtmlElement,
+    containerDirective: IncremarkContainer,
+    leafDirective: IncremarkContainer,
+    textDirective: IncremarkContainer,
   }
 
   /**
    * 获取组件
    */
   function getComponent(type: string): any {
-    return componentMap[type] || IncremarkDefault
+    return defaultComponentMap[type] || IncremarkDefault
   }
 
   /**
@@ -86,14 +88,11 @@
   />
 <!-- 代码节点：特殊处理，传递 customCodeBlocks 和 blockStatus -->
 {:else if node.type === 'code'}
-  {@const Component = getComponent('code')}
-  {#if Component}
-    <Component 
-      node={node} 
-      customCodeBlocks={customCodeBlocks}
-      blockStatus={blockStatus}
-    />
-  {/if}
+  <IncremarkCode
+    node={node}
+    customCodeBlocks={customCodeBlocks}
+    blockStatus={blockStatus}
+  />
 {:else}
   <!-- 其他节点：使用对应组件 -->
   {@const Component = getComponent(node.type)}

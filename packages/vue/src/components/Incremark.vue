@@ -1,30 +1,13 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
 import type { ParsedBlock, RootContent } from '@incremark/core'
-import type { HTML } from 'mdast'
 import { useDefinationsContext } from '../composables/useDefinationsContext'
 import type { UseIncremarkReturn } from '../composables/useIncremark'
-import IncremarkHeading from './IncremarkHeading.vue'
-import IncremarkParagraph from './IncremarkParagraph.vue'
-import IncremarkCode from './IncremarkCode.vue'
-import IncremarkList from './IncremarkList.vue'
-import IncremarkTable from './IncremarkTable.vue'
-import IncremarkBlockquote from './IncremarkBlockquote.vue'
-import IncremarkThematicBreak from './IncremarkThematicBreak.vue'
-import IncremarkMath from './IncremarkMath.vue'
-import IncremarkHtmlElement from './IncremarkHtmlElement.vue'
-import IncremarkFootnotes from './IncremarkFootnotes.vue'
 import IncremarkRenderer from './IncremarkRenderer.vue'
+import IncremarkFootnotes from './IncremarkFootnotes.vue'
 
 // 组件映射类型
 export type ComponentMap = Partial<Record<string, Component>>
-
-/**
- * 检查是否是 html 节点
- */
-function isHtmlNode(node: RootContent): node is HTML {
-  return node.type === 'html'
-}
 
 // 带稳定 ID 的块类型
 export interface BlockWithStableId extends ParsedBlock {
@@ -81,26 +64,6 @@ const actualIsDisplayComplete = computed(() => {
   return props.isDisplayComplete
 })
 
-// 默认组件映射
-const defaultComponents: Record<string, Component> = {
-  heading: IncremarkHeading,
-  paragraph: IncremarkParagraph,
-  code: IncremarkCode,
-  list: IncremarkList,
-  table: IncremarkTable,
-  blockquote: IncremarkBlockquote,
-  thematicBreak: IncremarkThematicBreak,
-  math: IncremarkMath,
-  inlineMath: IncremarkMath,
-  htmlElement: IncremarkHtmlElement
-}
-
-// 合并用户组件和默认组件
-const mergedComponents = computed(() => ({
-  ...defaultComponents,
-  ...props.components
-}))
-
 </script>
 
 <template>
@@ -117,15 +80,13 @@ const mergedComponents = computed(() => ({
           { 'incremark-last-pending': block.isLastPending }
         ]"
       >
-        <!-- HTML 节点：渲染为代码块显示源代码 -->
-        <pre v-if="isHtmlNode(block.node)" class="incremark-html-code"><code>{{ (block.node as HTML).value }}</code></pre>
-        <!-- 其他节点：使用对应组件，传递 customContainers 和 customCodeBlocks -->
+        <!-- 使用 IncremarkRenderer 统一处理所有节点类型 -->
         <IncremarkRenderer
-          v-else
           :node="block.node"
           :block-status="block.status"
           :custom-containers="customContainers"
           :custom-code-blocks="customCodeBlocks"
+          :components="components"
         />
       </div>
     </template>
