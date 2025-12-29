@@ -176,11 +176,18 @@ export function useIncremark(options: UseIncremarkOptions = {}): UseIncremarkRet
   })
 
   // 内容是否完全显示完成
-  // 如果没有启用打字机：解析完成即显示完成
+  // 如果没有配置打字机或未启用打字机：解析完成即显示完成
   // 如果启用打字机：解析完成 + 动画完成
   const isDisplayComplete = derived(
-    [isFinalized, isAnimationComplete],
-    ([$isFinalized, $isAnimationComplete]) => $isFinalized && $isAnimationComplete
+    [isFinalized, isAnimationComplete, typewriter.enabled],
+    ([$isFinalized, $isAnimationComplete, $typewriterEnabled]) => {
+      // 没有配置打字机，或者打字机未启用：只需判断是否 finalized
+      if (!options.typewriter || !$typewriterEnabled) {
+        return $isFinalized
+      }
+      // 启用了打字机：需要 finalize + 动画完成
+      return $isFinalized && $isAnimationComplete
+    }
   )
 
   // AST

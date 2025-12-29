@@ -13,6 +13,9 @@ interface BlockWithStableId extends ParsedBlock {
 export interface IncremarkProps {
   /** 要渲染的块列表 */
   blocks?: BlockWithStableId[]
+  /** 内容是否完全显示完成（用于控制脚注等需要在内容完全显示后才出现的元素）
+   * 如果传入了 incremark，则会自动使用 incremark.isDisplayComplete，此 prop 被忽略 */
+  isDisplayComplete?: boolean
   /** 自定义组件映射 */
   components?: Partial<Record<string, React.ComponentType<{ node: any }>>>
   /** 自定义容器组件映射，key 为容器名称（如 'warning', 'info'） */
@@ -44,6 +47,7 @@ export interface IncremarkProps {
 export const Incremark: React.FC<IncremarkProps> = (props) => {
   const {
     blocks: propsBlocks,
+    isDisplayComplete: propsIsDisplayComplete = false,
     components,
     customContainers,
     customCodeBlocks,
@@ -70,9 +74,9 @@ export const Incremark: React.FC<IncremarkProps> = (props) => {
     )
   }
 
-  // 否则使用传入的 props，自动判断 isDisplayComplete
+  // 否则使用传入的 props
   const blocks = propsBlocks || []
-  const isDisplayComplete = blocks.length > 0 && blocks.every(b => b.status === 'completed')
+  const isDisplayComplete = propsIsDisplayComplete
 
   return (
     <IncremarkInternal

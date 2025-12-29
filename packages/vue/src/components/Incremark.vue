@@ -36,6 +36,9 @@ const props = withDefaults(
   defineProps<{
     /** 要渲染的块列表（来自 useIncremark 的 blocks） */
     blocks?: BlockWithStableId[]
+    /** 内容是否完全显示完成（用于控制脚注等需要在内容完全显示后才出现的元素）
+     * 如果传入了 incremark，则会自动使用 incremark.isDisplayComplete，此 prop 被忽略 */
+    isDisplayComplete?: boolean
     /** 自定义组件映射，key 为节点类型 */
     components?: ComponentMap
     /** 自定义容器组件映射，key 为容器名称（如 'warning', 'info'） */
@@ -53,6 +56,7 @@ const props = withDefaults(
   }>(),
   {
     blocks: () => [],
+    isDisplayComplete: false,
     components: () => ({}),
     customContainers: () => ({}),
     customCodeBlocks: () => ({}),
@@ -69,12 +73,12 @@ const {
 // 计算实际使用的 blocks 和 isDisplayComplete
 const actualBlocks = computed<BlockWithStableId[]>(() => props.incremark?.blocks.value || props.blocks || [])
 const actualIsDisplayComplete = computed(() => {
+  // 优先使用 incremark 提供的 isDisplayComplete（已考虑打字机等状态）
   if (props.incremark) {
     return props.incremark.isDisplayComplete.value
   }
-  // 如果手动传入 blocks，自动判断是否所有 block 都是 completed
-  const blocks = props.blocks || []
-  return blocks.length > 0 && blocks.every(b => b.status === 'completed')
+  // 否则使用用户传入的 isDisplayComplete
+  return props.isDisplayComplete
 })
 
 // 默认组件映射

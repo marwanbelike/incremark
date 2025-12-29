@@ -40,6 +40,9 @@
   interface Props {
     /** 要渲染的块列表（来自 useIncremark 的 blocks） */
     blocks?: BlockWithStableId[] | Readable<BlockWithStableId[]>
+    /** 内容是否完全显示完成（用于控制脚注等需要在内容完全显示后才出现的元素）
+     * 如果传入了 incremark，则会自动使用 incremark.isDisplayComplete，此 prop 被忽略 */
+    isDisplayComplete?: boolean
     /** 自定义组件映射，key 为节点类型 */
     components?: ComponentMap
     /** 自定义容器组件映射，key 为容器名称（如 'warning', 'info'） */
@@ -58,6 +61,7 @@
 
   let {
     blocks = [],
+    isDisplayComplete = false,
     components = {},
     customContainers = {},
     customCodeBlocks = {},
@@ -76,9 +80,8 @@
       // 如果提供了 incremark，在模板中直接使用 $incremark.isDisplayComplete
       return false
     }
-    // 如果手动传入 blocks，自动判断是否所有 block 都是 completed
-    const blocksArray = Array.isArray(blocks) ? blocks : []
-    return blocksArray.length > 0 && blocksArray.every(b => b.status === 'completed')
+    // 否则使用用户传入的 isDisplayComplete
+    return isDisplayComplete
   })
 
   // 默认组件映射
