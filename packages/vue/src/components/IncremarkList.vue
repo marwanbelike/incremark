@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import type { List, ListItem, PhrasingContent, BlockContent } from 'mdast'
+import type { List, ListItem, RootContent } from 'mdast'
 import { computed } from 'vue'
 import IncremarkInline from './IncremarkInline.vue'
+import IncremarkRenderer from './IncremarkRenderer.vue'
 
 // 设置组件名称以支持递归引用
 defineOptions({
@@ -17,10 +18,10 @@ const tag = computed(() => props.node.ordered ? 'ol' : 'ul')
 /**
  * 获取列表项的内联内容（来自第一个 paragraph）
  */
-function getItemInlineContent(item: ListItem): PhrasingContent[] {
+function getItemInlineContent(item: ListItem) {
   const firstChild = item.children[0]
   if (firstChild?.type === 'paragraph') {
-    return firstChild.children as PhrasingContent[]
+    return firstChild.children
   }
   return []
 }
@@ -29,14 +30,14 @@ function getItemInlineContent(item: ListItem): PhrasingContent[] {
  * 获取列表项的块级子节点（嵌套列表、代码块等）
  * 排除第一个 paragraph，因为它已经被 getItemInlineContent 处理
  */
-function getItemBlockChildren(item: ListItem): BlockContent[] {
+function getItemBlockChildren(item: ListItem): RootContent[] {
   return item.children.filter((child, index) => {
     // 第一个 paragraph 已经被处理为内联内容
     if (index === 0 && child.type === 'paragraph') {
       return false
     }
     return true
-  }) as BlockContent[]
+  })
 }
 
 /**
@@ -68,12 +69,10 @@ function hasBlockChildren(item: ListItem): boolean {
       </label>
       <template v-else>
         <IncremarkInline :nodes="getItemInlineContent(item)" />
-        <!-- 递归渲染嵌套列表和其他块级内容 -->
+        <!-- 递归渲染所有块级内容（嵌套列表、heading、blockquote、code、table 等） -->
         <template v-if="hasBlockChildren(item)">
           <template v-for="(child, childIndex) in getItemBlockChildren(item)" :key="childIndex">
-            <!-- 嵌套列表 -->
-            <IncremarkList v-if="child.type === 'list'" :node="child as List" />
-            <!-- 其他块级内容可以在这里扩展 -->
+            <IncremarkRenderer :node="child" />
           </template>
         </template>
       </template>

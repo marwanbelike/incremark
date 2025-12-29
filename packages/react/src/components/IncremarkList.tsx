@@ -1,6 +1,7 @@
 import React from 'react'
-import type { List, ListItem, PhrasingContent, BlockContent } from 'mdast'
+import type { List, ListItem, RootContent } from 'mdast'
 import { IncremarkInline } from './IncremarkInline'
+import { IncremarkRenderer } from './IncremarkRenderer'
 
 export interface IncremarkListProps {
   node: List
@@ -9,10 +10,10 @@ export interface IncremarkListProps {
 /**
  * 获取列表项的内联内容（来自第一个 paragraph）
  */
-function getItemInlineContent(item: ListItem): PhrasingContent[] {
+function getItemInlineContent(item: ListItem) {
   const firstChild = item.children[0]
   if (firstChild?.type === 'paragraph') {
-    return firstChild.children as PhrasingContent[]
+    return firstChild.children
   }
   return []
 }
@@ -21,14 +22,14 @@ function getItemInlineContent(item: ListItem): PhrasingContent[] {
  * 获取列表项的块级子节点（嵌套列表、代码块等）
  * 排除第一个 paragraph，因为它已经被 getItemInlineContent 处理
  */
-function getItemBlockChildren(item: ListItem): BlockContent[] {
+function getItemBlockChildren(item: ListItem): RootContent[] {
   return item.children.filter((child, index) => {
     // 第一个 paragraph 已经被处理为内联内容
     if (index === 0 && child.type === 'paragraph') {
       return false
     }
     return true
-  }) as BlockContent[]
+  })
 }
 
 export const IncremarkList: React.FC<IncremarkListProps> = ({ node }) => {
@@ -63,14 +64,12 @@ export const IncremarkList: React.FC<IncremarkListProps> = ({ node }) => {
         return (
           <li key={index} className="incremark-list-item">
             <IncremarkInline nodes={inlineContent} />
-            {/* 递归渲染嵌套列表和其他块级内容 */}
-            {blockChildren.map((child, childIndex) => {
-              if (child.type === 'list') {
-                return <IncremarkList key={childIndex} node={child as List} />
-              }
-              // 其他块级内容可以在这里扩展
-              return null
-            })}
+            {/* 递归渲染所有块级内容（嵌套列表、heading、blockquote、code、table 等） */}
+            {blockChildren.map((child, childIndex) => (
+              <React.Fragment key={childIndex}>
+                <IncremarkRenderer node={child} />
+              </React.Fragment>
+            ))}
           </li>
         )
       })}

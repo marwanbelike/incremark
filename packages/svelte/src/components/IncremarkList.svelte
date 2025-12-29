@@ -1,12 +1,12 @@
 <!--
   @file IncremarkList.svelte - 列表组件
-  @description 渲染 Markdown 列表（有序列表和无序列表），支持任务列表和嵌套列表
+  @description 渲染 Markdown 列表（有序列表和无序列表），支持任务列表和所有块级内容
 -->
 
 <script lang="ts">
-  import type { List, ListItem, PhrasingContent, BlockContent } from 'mdast'
+  import type { List, ListItem, RootContent } from 'mdast'
   import IncremarkInline from './IncremarkInline.svelte'
-  import IncremarkList from './IncremarkList.svelte';
+  import IncremarkRenderer from './IncremarkRenderer.svelte'
 
   /**
    * 组件 Props
@@ -36,10 +36,10 @@
    * @param item - 列表项节点
    * @returns 行内内容数组
    */
-  function getItemInlineContent(item: ListItem): PhrasingContent[] {
+  function getItemInlineContent(item: ListItem) {
     const firstChild = item.children[0]
     if (firstChild?.type === 'paragraph') {
-      return firstChild.children as PhrasingContent[]
+      return firstChild.children
     }
     return []
   }
@@ -51,14 +51,14 @@
    * @param item - 列表项节点
    * @returns 块级子节点数组
    */
-  function getItemBlockChildren(item: ListItem): BlockContent[] {
+  function getItemBlockChildren(item: ListItem): RootContent[] {
     return item.children.filter((child, index) => {
       // 第一个 paragraph 已经被处理为内联内容
       if (index === 0 && child.type === 'paragraph') {
         return false
       }
       return true
-    }) as BlockContent[]
+    })
   }
 
   /**
@@ -96,12 +96,9 @@
         </label>
       {:else}
         <IncremarkInline nodes={getItemInlineContent(item)} />
-        <!-- 递归渲染嵌套列表和其他块级内容 -->
+        <!-- 递归渲染所有块级内容（嵌套列表、heading、blockquote、code、table 等） -->
         {#each getItemBlockChildren(item) as child, childIndex (childIndex)}
-          {#if child.type === 'list'}
-            <IncremarkList node={child} />
-          {/if}
-          <!-- 其他块级内容可以在这里扩展 -->
+          <IncremarkRenderer node={child} />
         {/each}
       {/if}
     </li>

@@ -1,11 +1,11 @@
 <!--
   @file IncremarkBlockquote.svelte - 引用组件
-  @description 渲染 Markdown 引用块
+  @description 渲染 Markdown 引用块，支持所有块级内容
 -->
 
 <script lang="ts">
   import type { Blockquote } from 'mdast'
-  import IncremarkParagraph from './IncremarkParagraph.svelte'
+  import IncremarkRenderer from './IncremarkRenderer.svelte'
 
   /**
    * 组件 Props
@@ -20,11 +20,7 @@
 
 <blockquote class="incremark-blockquote">
   {#each node.children as child, index (index)}
-    {#if child.type === 'paragraph'}
-      <IncremarkParagraph node={child} />
-    {:else}
-      <div class="unknown-child">{child.type}</div>
-    {/if}
+    <IncremarkRenderer node={child} />
   {/each}
 </blockquote>
 
