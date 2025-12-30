@@ -19,7 +19,7 @@ const RE_HTML_BLOCK_1 = /^\s{0,3}<(script|pre|style|textarea|!--|!DOCTYPE|\?|!\[
 const RE_HTML_BLOCK_2 = /^\s{0,3}<\/?[a-zA-Z][a-zA-Z0-9-]*(\s|>|$)/
 const RE_TABLE_DELIMITER = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?$/
 const RE_ESCAPE_SPECIAL = /[.*+?^${}()|[\]\\]/g
-const RE_FOOTNOTE_DEFINITION = /^\[\^[^\]]+\]:\s/
+const RE_FOOTNOTE_DEFINITION = /^\[\^([^\]]+)\]:\s/
 const RE_FOOTNOTE_CONTINUATION = /^(?:    |\t)/
 
 /** fence 结束模式缓存 */
@@ -86,20 +86,44 @@ export function isThematicBreak(line: string): boolean {
 
 /**
  * 检测是否是列表项开始
+ *
+ * CommonMark 规范：列表项可以是以下形式：
+ * - `- text`（无缩进）
+ * - `1. text`（有序列表）
+ * - `    - text`（缩进4个空格，作为上一个列表项的延续）
+ *
+ * 注意：`    - text` 这种形式，虽然 `-` 后面没有空格，
+ * 但因为前面有4个空格的缩进，所以是列表项的有效形式。
  */
 export function isListItemStart(line: string): { ordered: boolean; indent: number } | null {
-  // 无序列表: - * +
-  const unordered = line.match(RE_UNORDERED_LIST)
-  if (unordered) {
-    return { ordered: false, indent: unordered[1].length }
+  // 先检查是否以列表标记开头（-、*、+、数字）
+  const hasListMarker = /^(\s*)([-*+]|\d{1,9}[.)])/.test(line)
+  
+  if (!hasListMarker) {
+    return null
   }
-
-  // 有序列表: 1. 2) 等
-  const ordered = line.match(RE_ORDERED_LIST)
-  if (ordered) {
-    return { ordered: true, indent: ordered[1].length }
+  
+  // 如果有列表标记，检查是否是列表项的延续（缩进4+个空格）
+  const match = line.match(/^(\s*)([-*+]|\d{1,9}[.)])(.*)/)
+  if (match) {
+    const indent = match[1].length
+    const marker = match[2]
+    const rest = match[3]
+    
+    // 如果标记后有内容，检查是否是有效的列表项
+    if (rest.trim()) {
+      const isOrdered = /^\d{1,9}[.)]/.test(marker)
+      return { ordered: isOrdered, indent }
+    }
+    
+    // 标记后只有空格，可能是缩进的列表项
+    // 如 "    - text" 或 "        1. text"
+    if (/^\s+$/.test(rest)) {
+      const isOrdered = /^\d{1,9}[.)]/.test(marker)
+      return { ordered: isOrdered, indent }
+    }
   }
-
+  
   return null
 }
 
@@ -264,7 +288,9 @@ export function createInitialContext(): BlockContext {
     blockquoteDepth: 0,
     inContainer: false,
     containerDepth: 0,
-    inList: false
+    inList: false,
+    inFootnote: false,
+    footnoteIdentifier: undefined
   }
 }
 
@@ -283,6 +309,33 @@ function isListContinuation(line: string, listIndent: number): boolean {
   // 通常列表标记后至少需要 2 个字符的缩进（如 "1. " 或 "- "）
   const contentIndent = line.match(/^(\s*)/)?.[1].length ?? 0
   return contentIndent > listIndent
+}
+
+/**
+ * 更新代码块上下文
+ */
+function updateCodeContext(line: string, context: BlockContext): BlockContext | null {
+  const newContext = { ...context }
+
+  if (context.inFencedCode) {
+    if (detectFenceEnd(line, context)) {
+      newContext.inFencedCode = false
+      newContext.fenceChar = undefined
+      newContext.fenceLength = undefined
+      return newContext
+    }
+    return null
+  }
+
+  const fence = detectFenceStart(line)
+  if (fence) {
+    newContext.inFencedCode = true
+    newContext.fenceChar = fence.char
+    newContext.fenceLength = fence.length
+    return newContext
+  }
+
+  return null
 }
 
 /**
@@ -354,6 +407,24 @@ export function updateContext(
     }
   }
 
+  // 脚注处理
+  // 脚注定义会结束所有其他块（列表等），必须优先处理
+  
+  // 在脚注中，遇到新脚注定义：前一个脚注结束，新脚注开始
+  if (context.inFootnote && isFootnoteDefinitionStart(line)) {
+    const identifier = line.match(RE_FOOTNOTE_DEFINITION)?.[1]
+    newContext.footnoteIdentifier = identifier
+    return newContext
+  }
+  
+  // 不在脚注中，遇到脚注定义：脚注开始
+  if (!context.inFootnote && isFootnoteDefinitionStart(line)) {
+    const identifier = line.match(RE_FOOTNOTE_DEFINITION)?.[1]
+    newContext.inFootnote = true
+    newContext.footnoteIdentifier = identifier
+    return newContext
+  }
+
   // 列表处理
   const listItem = isListItemStart(line)
 
@@ -416,6 +487,60 @@ export function updateContext(
       newContext.listOrdered = listItem.ordered
       newContext.listIndent = listItem.indent
       newContext.listMayEnd = false
+      return newContext
+    }
+  }
+
+  // 脚注处理
+  if (context.inFootnote) {
+    // 已经在脚注中
+    if (isEmptyLine(line)) {
+      // 空行可能结束脚注（但不立即结束，等待下一行判断）
+      // 保持 inFootnote = true，这样可以处理脚注内部的多段落
+      return newContext
+    } else if (isListItemStart(line)) {
+      // 列表项处理
+      const listItemInfo = isListItemStart(line)!
+      
+      // 如果是无缩进的列表项（如 `- xxx`），则脚注结束
+      // 如果是缩进的列表项（如 `    - xxx`），则是脚注的延续内容
+      if (listItemInfo.indent === 0) {
+        // 无缩进列表项：脚注结束，开始新列表
+        newContext.inFootnote = false
+        newContext.footnoteIdentifier = undefined
+        // 继续处理列表项的逻辑（不在 else 分支，会继续执行列表处理）
+      } else {
+        // 缩进列表项：视为脚注的延续内容（可能包含嵌套列表）
+        // 保持 inFootnote = true
+        return newContext
+      }
+    } else if (isHeading(line)) {
+      // 标题结束脚注
+      newContext.inFootnote = false
+      newContext.footnoteIdentifier = undefined
+      return newContext
+    } else if (detectFenceStart(line)) {
+      // 代码块结束脚注
+      newContext.inFootnote = false
+      newContext.footnoteIdentifier = undefined
+      return newContext
+    } else if (isBlockquoteStart(line)) {
+      // 引用块结束脚注
+      newContext.inFootnote = false
+      newContext.footnoteIdentifier = undefined
+      return newContext
+    } else if (isFootnoteContinuation(line)) {
+      // 真正的脚注延续：以4+空格开头且不是列表项等
+      return newContext
+    } else if (isFootnoteDefinitionStart(line)) {
+      // 新脚注开始，前一个脚注结束
+      const identifier = line.match(RE_FOOTNOTE_DEFINITION)?.[1]
+      newContext.footnoteIdentifier = identifier
+      return newContext
+    } else {
+      // 其他内容（普通文本、表格等），脚注结束
+      newContext.inFootnote = false
+      newContext.footnoteIdentifier = undefined
       return newContext
     }
   }

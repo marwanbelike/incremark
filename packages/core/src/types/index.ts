@@ -166,6 +166,10 @@ export interface BlockContext {
   listIndent?: number
   /** 遇到空行后，列表可能结束（等待下一行确认） */
   listMayEnd?: boolean
+  /** 当前是否在脚注定义中 */
+  inFootnote?: boolean
+  /** 脚注标识符 */
+  footnoteIdentifier?: string
 }
 
 /**

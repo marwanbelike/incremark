@@ -110,29 +110,10 @@ export class BlockTransformer<T = unknown> {
     if (this.state.currentBlock) {
       const updated = blocks.find((b) => b.id === this.state.currentBlock!.id)
       if (updated && updated.node !== this.state.currentBlock.node) {
-        // 先获取旧的总字符数（在清除缓存之前）
-        const oldTotal = this.cachedTotalChars ?? this.countChars(this.state.currentBlock.node)
-        const newTotal = this.countChars(updated.node)
-
-        // 如果字符数减少了（AST 结构变化，如 **xxx 变成 **xxx**）
-        // 重新计算进度，保持相对位置，并清除 chunks
-        if (newTotal < oldTotal || newTotal < this.state.currentProgress) {
-          this.state.currentProgress = Math.min(this.state.currentProgress, newTotal)
-          // AST 结构变化，chunks 可能错位，需要清除
-          this.chunks = []
-        }
-
-        // 内容更新，清除缓存
-        this.clearCache()
-
+        // 使用统一的方法处理内容变化
+        this.handleContentChange(this.state.currentBlock.node, updated.node, true)
         // 更新引用
         this.state.currentBlock = updated
-        // 如果之前暂停了（因为到达末尾），重新开始
-        if (!this.rafId && !this.isPaused) {
-          if (this.state.currentProgress < newTotal) {
-            this.startIfNeeded()
-          }
-        }
       }
     }
   }
@@ -142,26 +123,9 @@ export class BlockTransformer<T = unknown> {
    */
   update(block: SourceBlock<T>): void {
     if (this.state.currentBlock?.id === block.id) {
-      const oldTotal = this.cachedTotalChars ?? this.countChars(this.state.currentBlock.node)
-      const newTotal = this.countChars(block.node)
-
-      // 内容变化，需要清除缓存（无论增加还是减少）
-      if (newTotal !== oldTotal) {
-        this.clearCache()
-      }
-
-      // 如果字符数减少了，调整进度并清除 chunks
-      if (newTotal < oldTotal || newTotal < this.state.currentProgress) {
-        this.state.currentProgress = Math.min(this.state.currentProgress, newTotal)
-        this.chunks = []
-      }
-
+      // 使用统一的方法处理内容变化
+      this.handleContentChange(this.state.currentBlock.node, block.node, false)
       this.state.currentBlock = block
-
-      // 如果内容增加了且之前暂停了，继续
-      if (newTotal > oldTotal && !this.rafId && !this.isPaused && this.state.currentProgress >= oldTotal) {
-        this.startIfNeeded()
-      }
     }
   }
 
@@ -339,6 +303,45 @@ export class BlockTransformer<T = unknown> {
 
   // ============ 私有方法 ============
 
+  /**
+   * 处理 block 内容更新时的字符数变化和进度调整
+   * 统一 push 和 update 方法中的重复逻辑
+   */
+  private handleContentChange(
+    oldNode: RootContent,
+    newNode: RootContent,
+    isUpdateFromPush?: boolean
+  ): void {
+    const oldTotal = this.cachedTotalChars ?? this.countChars(oldNode)
+    const newTotal = this.countChars(newNode)
+
+    // 如果字符数减少了（AST 结构变化，如 **xxx 变成 **xxx**）
+    // 重新计算进度，保持相对位置，并清除 chunks
+    if (newTotal < oldTotal || newTotal < this.state.currentProgress) {
+      this.state.currentProgress = Math.min(this.state.currentProgress, newTotal)
+      // AST 结构变化，chunks 可能错位，需要清除
+      this.chunks = []
+    }
+
+    // 内容变化，清除缓存
+    this.clearCache()
+
+    // 如果是 push 方法调用的更新，可能需要重新开始动画
+    if (isUpdateFromPush) {
+      // 如果之前暂停了（因为到达末尾），重新开始
+      if (!this.rafId && !this.isPaused) {
+        if (this.state.currentProgress < newTotal) {
+          this.startIfNeeded()
+        }
+      }
+    } else {
+      // 如果是 update 方法调用的更新，内容增加了且之前暂停了，继续
+      if (newTotal > oldTotal && !this.rafId && !this.isPaused && this.state.currentProgress >= oldTotal) {
+        this.startIfNeeded()
+      }
+    }
+  }
+
   private getAllBlockIds(): Set<string> {
     return new Set([
       ...this.state.completedBlocks.map((b) => b.id),
@@ -451,26 +454,43 @@ export class BlockTransformer<T = unknown> {
 
   /**
    * 从 AST 节点中提取指定范围的文本
+   *
+   * 优化说明：
+   * - 提前终止：当 charIndex >= end 时立即返回，避免不必要的遍历
+   * - 局部更新：charIndex 只在需要时更新，减少计算
+   * - 早期返回：发现足够的文本后可以提前退出（当前未实现，可作为未来优化）
+   *
+   * @param node 要提取文本的 AST 节点
+   * @param start 起始字符索引（包含）
+   * @param end 结束字符索引（不包含）
+   * @returns 提取的文本
    */
   private extractText(node: RootContent, start: number, end: number): string {
+    // 快速路径：空范围或无效范围
+    if (start >= end) {
+      return ''
+    }
+
     let result = ''
     let charIndex = 0
 
     function traverse(n: AstNode): boolean {
+      // 提前终止：已达到目标范围
       if (charIndex >= end) return false
 
       if (n.value && typeof n.value === 'string') {
         const nodeStart = charIndex
         const nodeEnd = charIndex + n.value.length
-        charIndex = nodeEnd
-
-        // 计算交集
         const overlapStart = Math.max(start, nodeStart)
         const overlapEnd = Math.min(end, nodeEnd)
 
+        // 只有当节点与目标范围有交集时才处理
         if (overlapStart < overlapEnd) {
           result += n.value.slice(overlapStart - nodeStart, overlapEnd - nodeStart)
         }
+
+        // 更新索引（仅在处理文本节点后）
+        charIndex = nodeEnd
         return charIndex < end
       }
 
@@ -617,12 +637,25 @@ export class BlockTransformer<T = unknown> {
 
   /**
    * 获取总字符数（带缓存）
+   *
+   * 缓存策略：
+   * - 首次调用时计算并缓存
+   * - 内容更新时通过 clearCache() 清除缓存，下次重新计算
+   * - 切换到新 block 时也会清除缓存
    */
   private getTotalChars(): number {
-    if (this.cachedTotalChars === null && this.state.currentBlock) {
+    // 没有当前 block 时返回 0
+    if (!this.state.currentBlock) {
+      this.cachedTotalChars = null
+      return 0
+    }
+
+    // 缓存为空时计算
+    if (this.cachedTotalChars === null) {
       this.cachedTotalChars = this.countChars(this.state.currentBlock.node)
     }
-    return this.cachedTotalChars ?? 0
+
+    return this.cachedTotalChars
   }
 
   /**
