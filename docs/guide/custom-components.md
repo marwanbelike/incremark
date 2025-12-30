@@ -510,6 +510,104 @@ Custom code block components receive the following props:
 
 - `codeStr`: The code string content
 - `lang`: The language identifier (e.g., `"echarts"`, `"mermaid"`)
+- `completed`: Whether the code block is completed (only available when using increment parsing)
+- `takeOver`: Whether the component takes over rendering from the start (configured via `codeBlockConfigs`)
+
+### Code Block Configuration
+
+Control code block rendering behavior using `codeBlockConfigs`:
+
+```typescript
+interface CodeBlockConfig {
+  /** Whether component takes over rendering directly */
+  takeOver?: boolean
+}
+```
+
+- **`takeOver: true`**: Custom component takes over rendering, original code is not shown
+- **`takeOver: false` or not set**: Show original code first, then display custom component after code is complete
+
+#### Usage Example
+
+::: code-group
+
+```vue [Vue]
+<script setup>
+import { useIncremark, Incremark } from '@incremark/vue'
+import CustomEchartCodeBlock from './CustomEchartCodeBlock.vue'
+
+const incremark = useIncremark({ gfm: true })
+
+const customCodeBlocks = {
+  echarts: CustomEchartCodeBlock,
+}
+
+const codeBlockConfigs = {
+  // CustomEchartCodeBlock takes over rendering directly
+  echarts: { takeOver: true },
+}
+</script>
+
+<template>
+  <Incremark 
+    :incremark="incremark"
+    :custom-code-blocks="customCodeBlocks"
+    :code-block-configs="codeBlockConfigs"
+  />
+</template>
+```
+
+```tsx [React]
+import { useIncremark, Incremark } from '@incremark/react'
+import { CustomEchartCodeBlock } from './CustomEchartCodeBlock'
+
+function App() {
+  const incremark = useIncremark({ gfm: true })
+
+  const customCodeBlocks = {
+    echarts: CustomEchartCodeBlock,
+  }
+
+  const codeBlockConfigs = {
+    // CustomEchartCodeBlock takes over rendering directly
+    echarts: { takeOver: true },
+  }
+
+  return (
+    <Incremark 
+      incremark={incremark}
+      customCodeBlocks={customCodeBlocks}
+      codeBlockConfigs={codeBlockConfigs}
+    />
+  )
+}
+```
+
+```svelte [Svelte]
+<script lang="ts">
+  import { useIncremark, Incremark } from '@incremark/svelte'
+  import CustomEchartCodeBlock from './CustomEchartCodeBlock.svelte'
+
+  const incremark = useIncremark({ gfm: true })
+
+  const customCodeBlocks = {
+    echarts: CustomEchartCodeBlock,
+  }
+
+  const codeBlockConfigs = {
+    // CustomEchartCodeBlock takes over rendering directly
+    echarts: { takeOver: true },
+  }
+</script>
+
+<Incremark 
+  {incremark}
+  {customCodeBlocks}
+  {codeBlockConfigs}
+/>
+```
+
+:::
 
 ### Example: Custom ECharts Code Block
 

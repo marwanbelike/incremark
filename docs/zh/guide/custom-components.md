@@ -510,6 +510,104 @@ function App() {
 
 - `codeStr`: 代码字符串内容
 - `lang`: 语言标识符（如 `"echarts"`、`"mermaid"`）
+- `completed`: 代码块是否已完成（仅在使用增量解析时可用）
+- `takeOver`: 组件是否从一开始就接管渲染（通过 `codeBlockConfigs` 配置）
+
+### 代码块配置
+
+通过 `codeBlockConfigs` 控制代码块的渲染方式：
+
+```typescript
+interface CodeBlockConfig {
+  /** 是否由组件直接接管渲染 */
+  takeOver?: boolean
+}
+```
+
+- **`takeOver: true`**：由自定义组件接管渲染，不展示原始代码
+- **`takeOver: false` 或未设置**：先展示原始代码，等代码接收完成后再展示自定义组件
+
+#### 使用示例
+
+::: code-group
+
+```vue [Vue]
+<script setup>
+import { useIncremark, Incremark } from '@incremark/vue'
+import CustomEchartCodeBlock from './CustomEchartCodeBlock.vue'
+
+const incremark = useIncremark({ gfm: true })
+
+const customCodeBlocks = {
+  echarts: CustomEchartCodeBlock,
+}
+
+const codeBlockConfigs = {
+  // CustomEchartCodeBlock 接管渲染
+  echarts: { takeOver: true },
+}
+</script>
+
+<template>
+  <Incremark 
+    :incremark="incremark"
+    :custom-code-blocks="customCodeBlocks"
+    :code-block-configs="codeBlockConfigs"
+  />
+</template>
+```
+
+```tsx [React]
+import { useIncremark, Incremark } from '@incremark/react'
+import { CustomEchartCodeBlock } from './CustomEchartCodeBlock'
+
+function App() {
+  const incremark = useIncremark({ gfm: true })
+
+  const customCodeBlocks = {
+    echarts: CustomEchartCodeBlock,
+  }
+
+  const codeBlockConfigs = {
+    // CustomEchartCodeBlock 接管渲染
+    echarts: { takeOver: true },
+  }
+
+  return (
+    <Incremark 
+      incremark={incremark}
+      customCodeBlocks={customCodeBlocks}
+      codeBlockConfigs={codeBlockConfigs}
+    />
+  )
+}
+```
+
+```svelte [Svelte]
+<script lang="ts">
+  import { useIncremark, Incremark } from '@incremark/svelte'
+  import CustomEchartCodeBlock from './CustomEchartCodeBlock.svelte'
+
+  const incremark = useIncremark({ gfm: true })
+
+  const customCodeBlocks = {
+    echarts: CustomEchartCodeBlock,
+  }
+
+  const codeBlockConfigs = {
+    // CustomEchartCodeBlock 接管渲染
+    echarts: { takeOver: true },
+  }
+</script>
+
+<Incremark 
+  {incremark}
+  {customCodeBlocks}
+  {codeBlockConfigs}
+/>
+```
+
+:::
 
 ### 示例：自定义 ECharts 代码块
 
