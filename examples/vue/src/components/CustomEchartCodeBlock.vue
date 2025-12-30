@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue'
+import { ref, watch, nextTick, computed, onMounted } from 'vue'
 import * as echarts from 'echarts'
 
 const props = defineProps<{
@@ -11,11 +11,11 @@ const props = defineProps<{
 
 const chartRef = ref<HTMLDivElement>()
 const error = ref('')
-const loading = ref(false)
+const loading = ref(true)
 
 // 是否应该显示图表
 const shouldShowChart = computed(() => {
-  return props.takeOver === true || props.completed
+  return props.completed
 })
 
 async function renderChart() {
@@ -44,15 +44,16 @@ async function renderChart() {
 }
 
 // 监听 completed 变化
-watch(() => props.completed, (newCompleted) => {
-  console.log('completed 变化:', newCompleted, 'takeOver:', props.takeOver)
-  
+watch(() => props.completed, (isCompleted) => {
   // 如果应该显示图表，等待 DOM 更新后渲染
-  if (props.takeOver === true || newCompleted) {
+  if (props.takeOver === true || isCompleted) {
     nextTick(() => {
       renderChart()
     })
   }
+})
+onMounted(() => {
+  renderChart()
 })
 </script>
 

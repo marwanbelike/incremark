@@ -66,9 +66,6 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
 
     return component
   }, [customCodeBlocks, language, blockStatus, codeBlockConfigs])
-
-  // 是否使用自定义组件
-  const useCustomComponent = !!CustomCodeBlock
   
   const toggleMermaidView = useCallback(() => {
     setMermaidViewMode(prev => prev === 'preview' ? 'source' : 'preview')
@@ -194,7 +191,7 @@ export const IncremarkCode: React.FC<IncremarkCodeProps> = ({
   }, [])
   
   // 自定义代码块组件
-  if (useCustomComponent && CustomCodeBlock) {
+  if (CustomCodeBlock) {
     const config = codeBlockConfigs?.[language]
     return (
       <CustomCodeBlock

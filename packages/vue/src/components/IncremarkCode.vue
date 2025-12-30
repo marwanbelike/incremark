@@ -54,6 +54,7 @@ function toggleMermaidView() {
 
 const language = computed(() => props.node.lang || 'text')
 const code = computed(() => props.node.value)
+
 const isMermaid = computed(() => language.value === 'mermaid')
 
 // 检查是否有自定义代码块组件
@@ -223,11 +224,12 @@ async function copyCode() {
 <template>
   <!-- 自定义代码块组件 -->
   <component
-    v-if="useCustomComponent && CustomCodeBlock"
+    v-if="CustomCodeBlock"
     :is="CustomCodeBlock"
     :code-str="code"
     :lang="language"
     :completed="blockStatus === 'completed'"
+    :takeOver="codeBlockConfigs?.[language]?.takeOver"
   />
 
   <!-- Mermaid 图表（如果没有自定义组件） -->

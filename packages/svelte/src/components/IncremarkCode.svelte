@@ -88,9 +88,6 @@
     return component
   })
 
-  // 是否使用自定义组件
-  const useCustomComponent = $derived(!!CustomCodeBlock)
-
   /**
    * 切换 Mermaid 视图模式
    */
@@ -247,9 +244,9 @@
 </script>
 
 <!-- 自定义代码块组件 -->
-{#if useCustomComponent && CustomCodeBlock}
+{#if CustomCodeBlock}
   {@const Component = CustomCodeBlock}
-  <Component codeStr={code} lang={language} completed={blockStatus === 'completed'} />
+  <Component codeStr={code} lang={language} completed={blockStatus === 'completed'} takeOver={codeBlockConfigs?.[language]?.takeOver} />
 {:else if isMermaid}
   <div class="incremark-mermaid">
     <div class="mermaid-header">
